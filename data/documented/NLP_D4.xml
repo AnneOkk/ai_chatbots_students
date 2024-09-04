@@ -1,0 +1,1909 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codeBook xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="ddi:codebook:2_5" version="2.5" xsi:schemaLocation="ddi:codebook:2_5 codebook.xsd" xml:lang="en">
+  <docDscr>
+    <citation>
+      <titlStmt>
+        <titl>Generic title</titl>
+        <IDNo agency="default">S0000</IDNo>
+      </titlStmt>
+      <prodStmt>
+        <prodDate date="2024-05-16 16:57:27">2024-05-16 16:57:27 CEST</prodDate>
+        <software version="0.18">R package DDIwR</software>
+      </prodStmt>
+    </citation>
+  </docDscr>
+  <fileDscr>
+    <fileTxt>
+      <fileName>NLP_D4</fileName>
+      <fileType>SPSS</fileType>
+    </fileTxt>
+    <notes ID="rawdata" subject="R dataset, serialized gzip" level="file">
+      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
+    </notes>
+  </fileDscr>
+  <dataDscr>
+    <var ID="Gz7bjgLYArbNXytF" name="id" dcml="0">
+      <sumStat type="min">9</sumStat>
+      <sumStat type="max">296</sumStat>
+      <sumStat type="mean">200.3723</sumStat>
+      <sumStat type="medn">198.5</sumStat>
+      <sumStat type="stdev">47.76825</sumStat>
+      <varFormat type="numeric">F8.0</varFormat>
+    </var>
+    <var ID="ymX3sEGAc8Bqcjan" name="t5toolused_1">
+      <varFormat type="character">A9</varFormat>
+    </var>
+    <var ID="SE6lwBKaFjnHfpCu" name="t5toolused_2">
+      <varFormat type="character">A11</varFormat>
+    </var>
+    <var ID="dFlistPNzPL9QL07" name="t5toolused_3">
+      <varFormat type="character">A1</varFormat>
+    </var>
+    <var ID="rlF8nh0DtSYkb9XI" name="t5timespent" dcml="0">
+      <labl>How would you describe the intensity of your interaction with NLP chatbots in terms of time today?</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Very minimal (less than 10 minutes)</labl>
+        <catStat type="freq">11</catStat>
+      </catgry>
+      <catgry>
+        <catValu>2</catValu>
+        <labl>Somewhat minimal (10-30 minutes)</labl>
+        <catStat type="freq">18</catStat>
+      </catgry>
+      <catgry>
+        <catValu>3</catValu>
+        <labl>Moderate (30-60 minutes)</labl>
+        <catStat type="freq">7</catStat>
+      </catgry>
+      <catgry>
+        <catValu>4</catValu>
+        <labl>Somewhat intense (1-2 hours)</labl>
+        <catStat type="freq">5</catStat>
+      </catgry>
+      <catgry>
+        <catValu>5</catValu>
+        <labl>Very intense (more than 2 hours)</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="dTeHzw6Gz8c2Rp9v" name="t5hoursused_4" dcml="0">
+      <labl>How many minutes did you spend using NLP chatbots today in total? - Time in minutes</labl>
+      <sumStat type="min">4</sumStat>
+      <sumStat type="max">135</sumStat>
+      <sumStat type="mean">30.41463</sumStat>
+      <sumStat type="medn">25</sumStat>
+      <sumStat type="stdev">27.75246</sumStat>
+      <varFormat type="numeric">F40.2</varFormat>
+    </var>
+    <var ID="qWfU7wriwK9ZZCuN" name="t5hoursstudy_4" dcml="1">
+      <labl>How many hours did you spend studying today (including lectures and seminars) in total? If you did not study today, please select 'Not Applicable'. - Time in hours</labl>
+      <sumStat type="min">0</sumStat>
+      <sumStat type="max">9.6</sumStat>
+      <sumStat type="mean">4.710127</sumStat>
+      <sumStat type="medn">4.2</sumStat>
+      <sumStat type="stdev">2.316861</sumStat>
+      <varFormat type="numeric">F40.2</varFormat>
+    </var>
+    <var ID="nJn3fTnl0Havl9T8" name="t5task_1" dcml="0">
+      <labl>For which study-related tasks did you use NLP chatbots today? - Selected Choice Writing or editing essays and papers</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Writing or editing essays and papers</labl>
+        <catStat type="freq">12</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="wwvrA2582WDSu1Kj" name="t5task_2" dcml="0">
+      <labl>For which study-related tasks did you use NLP chatbots today? - Selected Choice Conducting data analysis</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Conducting data analysis</labl>
+        <catStat type="freq">4</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="avKA8sixOBFbvEKZ" name="t5task_3" dcml="0">
+      <labl>For which study-related tasks did you use NLP chatbots today? - Selected Choice Finding online information or content</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Finding online information or content</labl>
+        <catStat type="freq">18</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="aRtSQsVq4f9PZGw6" name="t5task_4" dcml="0">
+      <labl>For which study-related tasks did you use NLP chatbots today? - Selected Choice Crafting or editing emails</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Crafting or editing emails</labl>
+        <catStat type="freq">7</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="qy7e8GdJY8CJW8qA" name="t5task_5" dcml="0">
+      <labl>For which study-related tasks did you use NLP chatbots today? - Selected Choice Generating ideas</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Generating ideas</labl>
+        <catStat type="freq">12</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="IlBeEmNwzwVbozVN" name="t5task_6" dcml="0">
+      <labl>For which study-related tasks did you use NLP chatbots today? - Selected Choice Preparing presentations or class speeches</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Preparing presentations or class speeches</labl>
+        <catStat type="freq">12</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="sOLc7f9yeOrlQxQe" name="t5task_7" dcml="0">
+      <labl>For which study-related tasks did you use NLP chatbots today? - Selected Choice Organization and making study plans</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Organization and making study plans</labl>
+        <catStat type="freq">3</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="D3ztW5NhuEohOvQ5" name="t5task_8" dcml="0">
+      <labl>For which study-related tasks did you use NLP chatbots today? - Selected Choice Other (please specify)</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Other (please specify)</labl>
+        <catStat type="freq">3</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="mCv2lkVDXi7cn6V4" name="t5task_8_text">
+      <labl>For which study-related tasks did you use NLP chatbots today? - Other (please specify) - Text</labl>
+      <varFormat type="character">A255</varFormat>
+    </var>
+    <var ID="Oaccb8uHQCWU2fwO" name="t5useful_1" dcml="0">
+      <labl>Please indicate how much you agree with the following statements regarding the NLP chatbot(s) you used today. - Using NLP chatbots enabled me to accomplish study tasks more quickly today.</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Strongly disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>2</catValu>
+        <labl>Disagree</labl>
+        <catStat type="freq">3</catStat>
+      </catgry>
+      <catgry>
+        <catValu>3</catValu>
+        <labl>Somewhat disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>4</catValu>
+        <labl>Neither agree nor disagree</labl>
+        <catStat type="freq">3</catStat>
+      </catgry>
+      <catgry>
+        <catValu>5</catValu>
+        <labl>Somewhat agree</labl>
+        <catStat type="freq">5</catStat>
+      </catgry>
+      <catgry>
+        <catValu>6</catValu>
+        <labl>Agree</labl>
+        <catStat type="freq">18</catStat>
+      </catgry>
+      <catgry>
+        <catValu>7</catValu>
+        <labl>Strongly agree</labl>
+        <catStat type="freq">11</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="bwLThZjR3Z57pMop" name="t5useful_2" dcml="0">
+      <labl>Please indicate how much you agree with the following statements regarding the NLP chatbot(s) you used today. - Using NLP chatbots improved my study performance today.</labl>
+      <sumStat type="min">2</sumStat>
+      <sumStat type="max">7</sumStat>
+      <sumStat type="mean">5.5</sumStat>
+      <sumStat type="medn">6</sumStat>
+      <sumStat type="stdev">1.300887</sumStat>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Strongly disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>2</catValu>
+        <labl>Disagree</labl>
+        <catStat type="freq">2</catStat>
+      </catgry>
+      <catgry>
+        <catValu>3</catValu>
+        <labl>Somewhat disagree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <catgry>
+        <catValu>4</catValu>
+        <labl>Neither agree nor disagree</labl>
+        <catStat type="freq">4</catStat>
+      </catgry>
+      <catgry>
+        <catValu>5</catValu>
+        <labl>Somewhat agree</labl>
+        <catStat type="freq">10</catStat>
+      </catgry>
+      <catgry>
+        <catValu>6</catValu>
+        <labl>Agree</labl>
+        <catStat type="freq">14</catStat>
+      </catgry>
+      <catgry>
+        <catValu>7</catValu>
+        <labl>Strongly agree</labl>
+        <catStat type="freq">9</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="xTCOnGoXVtw7h9DO" name="t5useful_3" dcml="0">
+      <labl>Please indicate how much you agree with the following statements regarding the NLP chatbot(s) you used today. - Using NLP chatbots increased my productivity today.</labl>
+      <sumStat type="min">2</sumStat>
+      <sumStat type="max">7</sumStat>
+      <sumStat type="mean">5.275</sumStat>
+      <sumStat type="medn">5</sumStat>
+      <sumStat type="stdev">1.395735</sumStat>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Strongly disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>2</catValu>
+        <labl>Disagree</labl>
+        <catStat type="freq">3</catStat>
+      </catgry>
+      <catgry>
+        <catValu>3</catValu>
+        <labl>Somewhat disagree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <catgry>
+        <catValu>4</catValu>
+        <labl>Neither agree nor disagree</labl>
+        <catStat type="freq">5</catStat>
+      </catgry>
+      <catgry>
+        <catValu>5</catValu>
+        <labl>Somewhat agree</labl>
+        <catStat type="freq">12</catStat>
+      </catgry>
+      <catgry>
+        <catValu>6</catValu>
+        <labl>Agree</labl>
+        <catStat type="freq">11</catStat>
+      </catgry>
+      <catgry>
+        <catValu>7</catValu>
+        <labl>Strongly agree</labl>
+        <catStat type="freq">8</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="d5FMtWGeN6VqvZC4" name="t5useful_4" dcml="0">
+      <labl>Please indicate how much you agree with the following statements regarding the NLP chatbot(s) you used today. - Using NLP chatbots enhanced my effectiveness in my studies today.</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Strongly disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>2</catValu>
+        <labl>Disagree</labl>
+        <catStat type="freq">3</catStat>
+      </catgry>
+      <catgry>
+        <catValu>3</catValu>
+        <labl>Somewhat disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>4</catValu>
+        <labl>Neither agree nor disagree</labl>
+        <catStat type="freq">4</catStat>
+      </catgry>
+      <catgry>
+        <catValu>5</catValu>
+        <labl>Somewhat agree</labl>
+        <catStat type="freq">12</catStat>
+      </catgry>
+      <catgry>
+        <catValu>6</catValu>
+        <labl>Agree</labl>
+        <catStat type="freq">16</catStat>
+      </catgry>
+      <catgry>
+        <catValu>7</catValu>
+        <labl>Strongly agree</labl>
+        <catStat type="freq">5</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="EZEREpbBP2WIKjzP" name="t5useful_5" dcml="0">
+      <labl>Please indicate how much you agree with the following statements regarding the NLP chatbot(s) you used today. - Using NLP chatbots made my studies easier today.</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Strongly disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>2</catValu>
+        <labl>Disagree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <catgry>
+        <catValu>3</catValu>
+        <labl>Somewhat disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>4</catValu>
+        <labl>Neither agree nor disagree</labl>
+        <catStat type="freq">5</catStat>
+      </catgry>
+      <catgry>
+        <catValu>5</catValu>
+        <labl>Somewhat agree</labl>
+        <catStat type="freq">5</catStat>
+      </catgry>
+      <catgry>
+        <catValu>6</catValu>
+        <labl>Agree</labl>
+        <catStat type="freq">21</catStat>
+      </catgry>
+      <catgry>
+        <catValu>7</catValu>
+        <labl>Strongly agree</labl>
+        <catStat type="freq">8</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="rgFR33gY8cutHzm2" name="t5useful_6" dcml="0">
+      <labl>Please indicate how much you agree with the following statements regarding the NLP chatbot(s) you used today. - I found NLP chatbots useful in my studies today.</labl>
+      <sumStat type="min">2</sumStat>
+      <sumStat type="max">7</sumStat>
+      <sumStat type="mean">5.675</sumStat>
+      <sumStat type="medn">6</sumStat>
+      <sumStat type="stdev">1.163273</sumStat>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Strongly disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>2</catValu>
+        <labl>Disagree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <catgry>
+        <catValu>3</catValu>
+        <labl>Somewhat disagree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <catgry>
+        <catValu>4</catValu>
+        <labl>Neither agree nor disagree</labl>
+        <catStat type="freq">4</catStat>
+      </catgry>
+      <catgry>
+        <catValu>5</catValu>
+        <labl>Somewhat agree</labl>
+        <catStat type="freq">7</catStat>
+      </catgry>
+      <catgry>
+        <catValu>6</catValu>
+        <labl>Agree</labl>
+        <catStat type="freq">18</catStat>
+      </catgry>
+      <catgry>
+        <catValu>7</catValu>
+        <labl>Strongly agree</labl>
+        <catStat type="freq">9</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="Fu0nNQezBWa84urw" name="t5ease_1" dcml="0">
+      <labl>Please indicate how much you agree with the following statements regarding the NLP chatbot(s) you used today. - Learning to operate NLP chatbots was easy for me today.</labl>
+      <sumStat type="min">2</sumStat>
+      <sumStat type="max">7</sumStat>
+      <sumStat type="mean">5.7</sumStat>
+      <sumStat type="medn">6</sumStat>
+      <sumStat type="stdev">1.066987</sumStat>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Strongly disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>2</catValu>
+        <labl>Disagree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <catgry>
+        <catValu>3</catValu>
+        <labl>Somewhat disagree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <catgry>
+        <catValu>4</catValu>
+        <labl>Neither agree nor disagree</labl>
+        <catStat type="freq">2</catStat>
+      </catgry>
+      <catgry>
+        <catValu>5</catValu>
+        <labl>Somewhat agree</labl>
+        <catStat type="freq">8</catStat>
+      </catgry>
+      <catgry>
+        <catValu>6</catValu>
+        <labl>Agree</labl>
+        <catStat type="freq">21</catStat>
+      </catgry>
+      <catgry>
+        <catValu>7</catValu>
+        <labl>Strongly agree</labl>
+        <catStat type="freq">7</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="zEQ1zIUr5Hgg9kIG" name="t5ease_2" dcml="0">
+      <labl>Please indicate how much you agree with the following statements regarding the NLP chatbot(s) you used today. - I found it easy to get NLP chatbots to do what I wanted them to do today.</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Strongly disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>2</catValu>
+        <labl>Disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>3</catValu>
+        <labl>Somewhat disagree</labl>
+        <catStat type="freq">2</catStat>
+      </catgry>
+      <catgry>
+        <catValu>4</catValu>
+        <labl>Neither agree nor disagree</labl>
+        <catStat type="freq">3</catStat>
+      </catgry>
+      <catgry>
+        <catValu>5</catValu>
+        <labl>Somewhat agree</labl>
+        <catStat type="freq">12</catStat>
+      </catgry>
+      <catgry>
+        <catValu>6</catValu>
+        <labl>Agree</labl>
+        <catStat type="freq">15</catStat>
+      </catgry>
+      <catgry>
+        <catValu>7</catValu>
+        <labl>Strongly agree</labl>
+        <catStat type="freq">8</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="hIdCARhbyivHUMme" name="t5ease_3" dcml="0">
+      <labl>Please indicate how much you agree with the following statements regarding the NLP chatbot(s) you used today. - My interaction with NLP chatbots was clear and understandable today.</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Strongly disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>2</catValu>
+        <labl>Disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>3</catValu>
+        <labl>Somewhat disagree</labl>
+        <catStat type="freq">2</catStat>
+      </catgry>
+      <catgry>
+        <catValu>4</catValu>
+        <labl>Neither agree nor disagree</labl>
+        <catStat type="freq">3</catStat>
+      </catgry>
+      <catgry>
+        <catValu>5</catValu>
+        <labl>Somewhat agree</labl>
+        <catStat type="freq">14</catStat>
+      </catgry>
+      <catgry>
+        <catValu>6</catValu>
+        <labl>Agree</labl>
+        <catStat type="freq">14</catStat>
+      </catgry>
+      <catgry>
+        <catValu>7</catValu>
+        <labl>Strongly agree</labl>
+        <catStat type="freq">7</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="kzgQ0MEgpuuG9rSY" name="t5ease_4" dcml="0">
+      <labl>Please indicate how much you agree with the following statements regarding the NLP chatbot(s) you used today. - I found NLP chatbots to be flexible to interact with today.</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Strongly disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>2</catValu>
+        <labl>Disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>3</catValu>
+        <labl>Somewhat disagree</labl>
+        <catStat type="freq">2</catStat>
+      </catgry>
+      <catgry>
+        <catValu>4</catValu>
+        <labl>Neither agree nor disagree</labl>
+        <catStat type="freq">3</catStat>
+      </catgry>
+      <catgry>
+        <catValu>5</catValu>
+        <labl>Somewhat agree</labl>
+        <catStat type="freq">13</catStat>
+      </catgry>
+      <catgry>
+        <catValu>6</catValu>
+        <labl>Agree</labl>
+        <catStat type="freq">17</catStat>
+      </catgry>
+      <catgry>
+        <catValu>7</catValu>
+        <labl>Strongly agree</labl>
+        <catStat type="freq">5</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="pM4hZ3YYsPiGGTrm" name="t5ease_5" dcml="0">
+      <labl>Please indicate how much you agree with the following statements regarding the NLP chatbot(s) you used today. - It was easy for me to become skillful at using NLP chatbots today.</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Strongly disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>2</catValu>
+        <labl>Disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>3</catValu>
+        <labl>Somewhat disagree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <catgry>
+        <catValu>4</catValu>
+        <labl>Neither agree nor disagree</labl>
+        <catStat type="freq">8</catStat>
+      </catgry>
+      <catgry>
+        <catValu>5</catValu>
+        <labl>Somewhat agree</labl>
+        <catStat type="freq">7</catStat>
+      </catgry>
+      <catgry>
+        <catValu>6</catValu>
+        <labl>Agree</labl>
+        <catStat type="freq">18</catStat>
+      </catgry>
+      <catgry>
+        <catValu>7</catValu>
+        <labl>Strongly agree</labl>
+        <catStat type="freq">6</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="VieWsjRlcJPXfIjv" name="t5ease_6" dcml="0">
+      <labl>Please indicate how much you agree with the following statements regarding the NLP chatbot(s) you used today. - I found NLP chatbots easy to use today.</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Strongly disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>2</catValu>
+        <labl>Disagree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <catgry>
+        <catValu>3</catValu>
+        <labl>Somewhat disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>4</catValu>
+        <labl>Neither agree nor disagree</labl>
+        <catStat type="freq">3</catStat>
+      </catgry>
+      <catgry>
+        <catValu>5</catValu>
+        <labl>Somewhat agree</labl>
+        <catStat type="freq">13</catStat>
+      </catgry>
+      <catgry>
+        <catValu>6</catValu>
+        <labl>Agree</labl>
+        <catStat type="freq">17</catStat>
+      </catgry>
+      <catgry>
+        <catValu>7</catValu>
+        <labl>Strongly agree</labl>
+        <catStat type="freq">6</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="nDl3eV2cP7CSUoC4" name="t5over_1" dcml="0">
+      <labl>Please indicate how much you agree with the following statements regarding the NLP chatbot(s) you used today. - Today I was distracted by the excessive amount of information provided by NLP chatbots when working on my study tasks.</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Strongly disagree</labl>
+        <catStat type="freq">13</catStat>
+      </catgry>
+      <catgry>
+        <catValu>2</catValu>
+        <labl>Somewhat disagree</labl>
+        <catStat type="freq">19</catStat>
+      </catgry>
+      <catgry>
+        <catValu>3</catValu>
+        <labl>Neither agree nor disagree</labl>
+        <catStat type="freq">4</catStat>
+      </catgry>
+      <catgry>
+        <catValu>4</catValu>
+        <labl>Somewhat agree</labl>
+        <catStat type="freq">4</catStat>
+      </catgry>
+      <catgry>
+        <catValu>5</catValu>
+        <labl>Strongly agree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="gFcVV1LyFAHJN8Sn" name="t5over_2" dcml="0">
+      <labl>Please indicate how much you agree with the following statements regarding the NLP chatbot(s) you used today. - Today I was overwhelmed by the quantity of information I had to process while using NLP chatbots for my daily study tasks.</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Strongly disagree</labl>
+        <catStat type="freq">19</catStat>
+      </catgry>
+      <catgry>
+        <catValu>2</catValu>
+        <labl>Somewhat disagree</labl>
+        <catStat type="freq">14</catStat>
+      </catgry>
+      <catgry>
+        <catValu>3</catValu>
+        <labl>Neither agree nor disagree</labl>
+        <catStat type="freq">5</catStat>
+      </catgry>
+      <catgry>
+        <catValu>4</catValu>
+        <labl>Somewhat agree</labl>
+        <catStat type="freq">2</catStat>
+      </catgry>
+      <catgry>
+        <catValu>5</catValu>
+        <labl>Strongly agree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="hoCsQkKf3K5mlWZr" name="t5over_3" dcml="0">
+      <labl>Please indicate how much you agree with the following statements regarding the NLP chatbot(s) you used today. - Today my problem was with too much information to synthesize from NLP chatbots, rather than not having enough information to work with.</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Strongly disagree</labl>
+        <catStat type="freq">17</catStat>
+      </catgry>
+      <catgry>
+        <catValu>2</catValu>
+        <labl>Somewhat disagree</labl>
+        <catStat type="freq">9</catStat>
+      </catgry>
+      <catgry>
+        <catValu>3</catValu>
+        <labl>Neither agree nor disagree</labl>
+        <catStat type="freq">9</catStat>
+      </catgry>
+      <catgry>
+        <catValu>4</catValu>
+        <labl>Somewhat agree</labl>
+        <catStat type="freq">4</catStat>
+      </catgry>
+      <catgry>
+        <catValu>5</catValu>
+        <labl>Strongly agree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="bEjLkybBEQgbwMVy" name="t5over_4" dcml="0">
+      <labl>Please indicate how much you agree with the following statements regarding the NLP chatbot(s) you used today. - Please select 'Somewhat disagree'.</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Strongly disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>2</catValu>
+        <labl>Somewhat disagree</labl>
+        <catStat type="freq">38</catStat>
+      </catgry>
+      <catgry>
+        <catValu>3</catValu>
+        <labl>Neither agree nor disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>4</catValu>
+        <labl>Somewhat agree</labl>
+        <catStat type="freq">2</catStat>
+      </catgry>
+      <catgry>
+        <catValu>5</catValu>
+        <labl>Strongly agree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="yAylgSZlBHi5r1Ex" name="t5gopro1_1" dcml="0">
+      <labl>Today, I have made a lot of progress regarding the following task(s): - Writing or editing essays and papers</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Strongly disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>2</catValu>
+        <labl>Disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>3</catValu>
+        <labl>Somewhat disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>4</catValu>
+        <labl>Neither agree nor disagree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <catgry>
+        <catValu>5</catValu>
+        <labl>Somewhat agree</labl>
+        <catStat type="freq">2</catStat>
+      </catgry>
+      <catgry>
+        <catValu>6</catValu>
+        <labl>Agree</labl>
+        <catStat type="freq">8</catStat>
+      </catgry>
+      <catgry>
+        <catValu>7</catValu>
+        <labl>Strongly agree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="BsPF4OyxSI8ITshH" name="t5gopro1_2" dcml="0">
+      <labl>Today, I have made a lot of progress regarding the following task(s): - Conducting data analysis</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Strongly disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>2</catValu>
+        <labl>Disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>3</catValu>
+        <labl>Somewhat disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>4</catValu>
+        <labl>Neither agree nor disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>5</catValu>
+        <labl>Somewhat agree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>6</catValu>
+        <labl>Agree</labl>
+        <catStat type="freq">2</catStat>
+      </catgry>
+      <catgry>
+        <catValu>7</catValu>
+        <labl>Strongly agree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="PxaTuYQAcTMoq1d4" name="t5gopro1_3" dcml="0">
+      <labl>Today, I have made a lot of progress regarding the following task(s): - Finding online information or content</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Strongly disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>2</catValu>
+        <labl>Disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>3</catValu>
+        <labl>Somewhat disagree</labl>
+        <catStat type="freq">2</catStat>
+      </catgry>
+      <catgry>
+        <catValu>4</catValu>
+        <labl>Neither agree nor disagree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <catgry>
+        <catValu>5</catValu>
+        <labl>Somewhat agree</labl>
+        <catStat type="freq">4</catStat>
+      </catgry>
+      <catgry>
+        <catValu>6</catValu>
+        <labl>Agree</labl>
+        <catStat type="freq">6</catStat>
+      </catgry>
+      <catgry>
+        <catValu>7</catValu>
+        <labl>Strongly agree</labl>
+        <catStat type="freq">4</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="ETqqhx0CLBHGQ0qL" name="t5gopro1_4" dcml="0">
+      <labl>Today, I have made a lot of progress regarding the following task(s): - Crafting or editing emails</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Strongly disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>2</catValu>
+        <labl>Disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>3</catValu>
+        <labl>Somewhat disagree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <catgry>
+        <catValu>4</catValu>
+        <labl>Neither agree nor disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>5</catValu>
+        <labl>Somewhat agree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>6</catValu>
+        <labl>Agree</labl>
+        <catStat type="freq">5</catStat>
+      </catgry>
+      <catgry>
+        <catValu>7</catValu>
+        <labl>Strongly agree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="PP5ZDe50EGRfFgyZ" name="t5gopro1_5" dcml="0">
+      <labl>Today, I have made a lot of progress regarding the following task(s): - Generating ideas</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Strongly disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>2</catValu>
+        <labl>Disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>3</catValu>
+        <labl>Somewhat disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>4</catValu>
+        <labl>Neither agree nor disagree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <catgry>
+        <catValu>5</catValu>
+        <labl>Somewhat agree</labl>
+        <catStat type="freq">3</catStat>
+      </catgry>
+      <catgry>
+        <catValu>6</catValu>
+        <labl>Agree</labl>
+        <catStat type="freq">6</catStat>
+      </catgry>
+      <catgry>
+        <catValu>7</catValu>
+        <labl>Strongly agree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="Cuy0qVyZSCG4oTBj" name="t5gopro1_6" dcml="0">
+      <labl>Today, I have made a lot of progress regarding the following task(s): - Preparing presentations or class speeches</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Strongly disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>2</catValu>
+        <labl>Disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>3</catValu>
+        <labl>Somewhat disagree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <catgry>
+        <catValu>4</catValu>
+        <labl>Neither agree nor disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>5</catValu>
+        <labl>Somewhat agree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <catgry>
+        <catValu>6</catValu>
+        <labl>Agree</labl>
+        <catStat type="freq">5</catStat>
+      </catgry>
+      <catgry>
+        <catValu>7</catValu>
+        <labl>Strongly agree</labl>
+        <catStat type="freq">4</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="obBLywdJCYeeWEiE" name="t5gopro1_7" dcml="0">
+      <labl>Today, I have made a lot of progress regarding the following task(s): - Organization and making study plans</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Strongly disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>2</catValu>
+        <labl>Disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>3</catValu>
+        <labl>Somewhat disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>4</catValu>
+        <labl>Neither agree nor disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>5</catValu>
+        <labl>Somewhat agree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <catgry>
+        <catValu>6</catValu>
+        <labl>Agree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <catgry>
+        <catValu>7</catValu>
+        <labl>Strongly agree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="Evckx5x8iwWuOavC" name="t5gopro1_8" dcml="0">
+      <labl>Today, I have made a lot of progress regarding the following task(s): - Other (please specify)</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Strongly disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>2</catValu>
+        <labl>Disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>3</catValu>
+        <labl>Somewhat disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>4</catValu>
+        <labl>Neither agree nor disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>5</catValu>
+        <labl>Somewhat agree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <catgry>
+        <catValu>6</catValu>
+        <labl>Agree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <catgry>
+        <catValu>7</catValu>
+        <labl>Strongly agree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="T4vWamLFmkRHJsq5" name="t5gopro1_8_text">
+      <labl>Today, I have made a lot of progress regarding the following task(s): - Other (please specify) - Text</labl>
+      <varFormat type="character">A255</varFormat>
+    </var>
+    <var ID="QWfmFtNuItQfomOG" name="t5gopro2_1" dcml="0">
+      <labl>Today, I feel like I am on track with the following task(s): - Writing or editing essays and papers</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Strongly disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>2</catValu>
+        <labl>Disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>3</catValu>
+        <labl>Somewhat disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>4</catValu>
+        <labl>Neither agree nor disagree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <catgry>
+        <catValu>5</catValu>
+        <labl>Somewhat agree</labl>
+        <catStat type="freq">2</catStat>
+      </catgry>
+      <catgry>
+        <catValu>6</catValu>
+        <labl>Agree</labl>
+        <catStat type="freq">8</catStat>
+      </catgry>
+      <catgry>
+        <catValu>7</catValu>
+        <labl>Strongly agree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="LHLP9a0QejZ8m7aO" name="t5gopro2_2" dcml="0">
+      <labl>Today, I feel like I am on track with the following task(s): - Conducting data analysis</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Strongly disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>2</catValu>
+        <labl>Disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>3</catValu>
+        <labl>Somewhat disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>4</catValu>
+        <labl>Neither agree nor disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>5</catValu>
+        <labl>Somewhat agree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>6</catValu>
+        <labl>Agree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <catgry>
+        <catValu>7</catValu>
+        <labl>Strongly agree</labl>
+        <catStat type="freq">2</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="DXGBcYBZZ4bD2Ss9" name="t5gopro2_3" dcml="0">
+      <labl>Today, I feel like I am on track with the following task(s): - Finding online information or content</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Strongly disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>2</catValu>
+        <labl>Disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>3</catValu>
+        <labl>Somewhat disagree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <catgry>
+        <catValu>4</catValu>
+        <labl>Neither agree nor disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>5</catValu>
+        <labl>Somewhat agree</labl>
+        <catStat type="freq">6</catStat>
+      </catgry>
+      <catgry>
+        <catValu>6</catValu>
+        <labl>Agree</labl>
+        <catStat type="freq">9</catStat>
+      </catgry>
+      <catgry>
+        <catValu>7</catValu>
+        <labl>Strongly agree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="dudgkHOb1buITXDi" name="t5gopro2_4" dcml="0">
+      <labl>Today, I feel like I am on track with the following task(s): - Crafting or editing emails</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Strongly disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>2</catValu>
+        <labl>Disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>3</catValu>
+        <labl>Somewhat disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>4</catValu>
+        <labl>Neither agree nor disagree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <catgry>
+        <catValu>5</catValu>
+        <labl>Somewhat agree</labl>
+        <catStat type="freq">2</catStat>
+      </catgry>
+      <catgry>
+        <catValu>6</catValu>
+        <labl>Agree</labl>
+        <catStat type="freq">3</catStat>
+      </catgry>
+      <catgry>
+        <catValu>7</catValu>
+        <labl>Strongly agree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="a84edu66vbfcREmc" name="t5gopro2_5" dcml="0">
+      <labl>Today, I feel like I am on track with the following task(s): - Generating ideas</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Strongly disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>2</catValu>
+        <labl>Disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>3</catValu>
+        <labl>Somewhat disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>4</catValu>
+        <labl>Neither agree nor disagree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <catgry>
+        <catValu>5</catValu>
+        <labl>Somewhat agree</labl>
+        <catStat type="freq">2</catStat>
+      </catgry>
+      <catgry>
+        <catValu>6</catValu>
+        <labl>Agree</labl>
+        <catStat type="freq">6</catStat>
+      </catgry>
+      <catgry>
+        <catValu>7</catValu>
+        <labl>Strongly agree</labl>
+        <catStat type="freq">2</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="mTHL5x22BVlSKks7" name="t5gopro2_6" dcml="0">
+      <labl>Today, I feel like I am on track with the following task(s): - Preparing presentations or class speeches</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Strongly disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>2</catValu>
+        <labl>Disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>3</catValu>
+        <labl>Somewhat disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>4</catValu>
+        <labl>Neither agree nor disagree</labl>
+        <catStat type="freq">2</catStat>
+      </catgry>
+      <catgry>
+        <catValu>5</catValu>
+        <labl>Somewhat agree</labl>
+        <catStat type="freq">2</catStat>
+      </catgry>
+      <catgry>
+        <catValu>6</catValu>
+        <labl>Agree</labl>
+        <catStat type="freq">6</catStat>
+      </catgry>
+      <catgry>
+        <catValu>7</catValu>
+        <labl>Strongly agree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="g15ULMJkohj9Gdv3" name="t5gopro2_7" dcml="0">
+      <labl>Today, I feel like I am on track with the following task(s): - Organization and making study plans</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Strongly disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>2</catValu>
+        <labl>Disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>3</catValu>
+        <labl>Somewhat disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>4</catValu>
+        <labl>Neither agree nor disagree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <catgry>
+        <catValu>5</catValu>
+        <labl>Somewhat agree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>6</catValu>
+        <labl>Agree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <catgry>
+        <catValu>7</catValu>
+        <labl>Strongly agree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="K0nGwQxeSyXHsyUp" name="t5gopro2_8" dcml="0">
+      <labl>Today, I feel like I am on track with the following task(s): - Other (please specify)</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Strongly disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>2</catValu>
+        <labl>Disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>3</catValu>
+        <labl>Somewhat disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>4</catValu>
+        <labl>Neither agree nor disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>5</catValu>
+        <labl>Somewhat agree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <catgry>
+        <catValu>6</catValu>
+        <labl>Agree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>7</catValu>
+        <labl>Strongly agree</labl>
+        <catStat type="freq">2</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="k2TDh09cNY6Q02nf" name="t5gopro2_8_text">
+      <labl>Today, I feel like I am on track with the following task(s): - Other (please specify) - Text</labl>
+      <varFormat type="character">A255</varFormat>
+    </var>
+    <var ID="xtQ0fC45buV2MvgQ" name="t5gopro3_1" dcml="0">
+      <labl>Today, I feel like I am getting closer to completing the following task(s): - Writing or editing essays and papers</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Strongly disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>2</catValu>
+        <labl>Disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>3</catValu>
+        <labl>Somewhat disagree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <catgry>
+        <catValu>4</catValu>
+        <labl>Neither agree nor disagree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <catgry>
+        <catValu>5</catValu>
+        <labl>Somewhat agree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <catgry>
+        <catValu>6</catValu>
+        <labl>Agree</labl>
+        <catStat type="freq">7</catStat>
+      </catgry>
+      <catgry>
+        <catValu>7</catValu>
+        <labl>Strongly agree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="nI66oC7VsUX1ENNy" name="t5gopro3_2" dcml="0">
+      <labl>Today, I feel like I am getting closer to completing the following task(s): - Conducting data analysis</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Strongly disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>2</catValu>
+        <labl>Disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>3</catValu>
+        <labl>Somewhat disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>4</catValu>
+        <labl>Neither agree nor disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>5</catValu>
+        <labl>Somewhat agree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>6</catValu>
+        <labl>Agree</labl>
+        <catStat type="freq">3</catStat>
+      </catgry>
+      <catgry>
+        <catValu>7</catValu>
+        <labl>Strongly agree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="CAJ6iC1w97rt4rGd" name="t5gopro3_3" dcml="0">
+      <labl>Today, I feel like I am getting closer to completing the following task(s): - Finding online information or content</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Strongly disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>2</catValu>
+        <labl>Disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>3</catValu>
+        <labl>Somewhat disagree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <catgry>
+        <catValu>4</catValu>
+        <labl>Neither agree nor disagree</labl>
+        <catStat type="freq">2</catStat>
+      </catgry>
+      <catgry>
+        <catValu>5</catValu>
+        <labl>Somewhat agree</labl>
+        <catStat type="freq">3</catStat>
+      </catgry>
+      <catgry>
+        <catValu>6</catValu>
+        <labl>Agree</labl>
+        <catStat type="freq">8</catStat>
+      </catgry>
+      <catgry>
+        <catValu>7</catValu>
+        <labl>Strongly agree</labl>
+        <catStat type="freq">3</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="xVE2ovoYxzOumuxm" name="t5gopro3_4" dcml="0">
+      <labl>Today, I feel like I am getting closer to completing the following task(s): - Crafting or editing emails</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Strongly disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>2</catValu>
+        <labl>Disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>3</catValu>
+        <labl>Somewhat disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>4</catValu>
+        <labl>Neither agree nor disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>5</catValu>
+        <labl>Somewhat agree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <catgry>
+        <catValu>6</catValu>
+        <labl>Agree</labl>
+        <catStat type="freq">3</catStat>
+      </catgry>
+      <catgry>
+        <catValu>7</catValu>
+        <labl>Strongly agree</labl>
+        <catStat type="freq">3</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="JzCUDFrJACveGU7f" name="t5gopro3_5" dcml="0">
+      <labl>Today, I feel like I am getting closer to completing the following task(s): - Generating ideas</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Strongly disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>2</catValu>
+        <labl>Disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>3</catValu>
+        <labl>Somewhat disagree</labl>
+        <catStat type="freq">2</catStat>
+      </catgry>
+      <catgry>
+        <catValu>4</catValu>
+        <labl>Neither agree nor disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>5</catValu>
+        <labl>Somewhat agree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>6</catValu>
+        <labl>Agree</labl>
+        <catStat type="freq">8</catStat>
+      </catgry>
+      <catgry>
+        <catValu>7</catValu>
+        <labl>Strongly agree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="MprrnqNYl54wbgbZ" name="t5gopro3_6" dcml="0">
+      <labl>Today, I feel like I am getting closer to completing the following task(s): - Preparing presentations or class speeches</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Strongly disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>2</catValu>
+        <labl>Disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>3</catValu>
+        <labl>Somewhat disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>4</catValu>
+        <labl>Neither agree nor disagree</labl>
+        <catStat type="freq">2</catStat>
+      </catgry>
+      <catgry>
+        <catValu>5</catValu>
+        <labl>Somewhat agree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>6</catValu>
+        <labl>Agree</labl>
+        <catStat type="freq">7</catStat>
+      </catgry>
+      <catgry>
+        <catValu>7</catValu>
+        <labl>Strongly agree</labl>
+        <catStat type="freq">2</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="PxzHhLTiQjIcFIMe" name="t5gopro3_7" dcml="0">
+      <labl>Today, I feel like I am getting closer to completing the following task(s): - Organization and making study plans</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Strongly disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>2</catValu>
+        <labl>Disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>3</catValu>
+        <labl>Somewhat disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>4</catValu>
+        <labl>Neither agree nor disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>5</catValu>
+        <labl>Somewhat agree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>6</catValu>
+        <labl>Agree</labl>
+        <catStat type="freq">2</catStat>
+      </catgry>
+      <catgry>
+        <catValu>7</catValu>
+        <labl>Strongly agree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="EOgFmKj8KFtADVMj" name="t5gopro3_8" dcml="0">
+      <labl>Today, I feel like I am getting closer to completing the following task(s): - Other (please specify)</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Strongly disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>2</catValu>
+        <labl>Disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>3</catValu>
+        <labl>Somewhat disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>4</catValu>
+        <labl>Neither agree nor disagree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>5</catValu>
+        <labl>Somewhat agree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>6</catValu>
+        <labl>Agree</labl>
+        <catStat type="freq">2</catStat>
+      </catgry>
+      <catgry>
+        <catValu>7</catValu>
+        <labl>Strongly agree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="FHl4eXoyZz1XfJFA" name="t5gopro3_8_text">
+      <labl>Today, I feel like I am getting closer to completing the following task(s): - Other (please specify) - Text</labl>
+      <varFormat type="character">A255</varFormat>
+    </var>
+    <var ID="MryeX08r7DqClI5V" name="t5strain_1" dcml="0">
+      <labl>Please indicate how much you agree with the following statements regarding the NLP chatbot(s) you used today. - Today I felt drained from activities that required me to use NLP chatbots.</labl>
+      <sumStat type="min">1</sumStat>
+      <sumStat type="max">7</sumStat>
+      <sumStat type="mean">2.525</sumStat>
+      <sumStat type="medn">2</sumStat>
+      <sumStat type="stdev">1.339489</sumStat>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Strongly disagree</labl>
+        <catStat type="freq">9</catStat>
+      </catgry>
+      <catgry>
+        <catValu>2</catValu>
+        <labl>Disagree</labl>
+        <catStat type="freq">14</catStat>
+      </catgry>
+      <catgry>
+        <catValu>3</catValu>
+        <labl>Somewhat disagree</labl>
+        <catStat type="freq">9</catStat>
+      </catgry>
+      <catgry>
+        <catValu>4</catValu>
+        <labl>Neither agree nor disagree</labl>
+        <catStat type="freq">5</catStat>
+      </catgry>
+      <catgry>
+        <catValu>5</catValu>
+        <labl>Somewhat agree</labl>
+        <catStat type="freq">2</catStat>
+      </catgry>
+      <catgry>
+        <catValu>6</catValu>
+        <labl>Agree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>7</catValu>
+        <labl>Strongly agree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="SiTfESaZgF6uEI6U" name="t5strain_2" dcml="0">
+      <labl>Please indicate how much you agree with the following statements regarding the NLP chatbot(s) you used today. - Today I felt tired from using NLP chatbots.</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Strongly disagree</labl>
+        <catStat type="freq">12</catStat>
+      </catgry>
+      <catgry>
+        <catValu>2</catValu>
+        <labl>Disagree</labl>
+        <catStat type="freq">13</catStat>
+      </catgry>
+      <catgry>
+        <catValu>3</catValu>
+        <labl>Somewhat disagree</labl>
+        <catStat type="freq">8</catStat>
+      </catgry>
+      <catgry>
+        <catValu>4</catValu>
+        <labl>Neither agree nor disagree</labl>
+        <catStat type="freq">5</catStat>
+      </catgry>
+      <catgry>
+        <catValu>5</catValu>
+        <labl>Somewhat agree</labl>
+        <catStat type="freq">2</catStat>
+      </catgry>
+      <catgry>
+        <catValu>6</catValu>
+        <labl>Agree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>7</catValu>
+        <labl>Strongly agree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="aCSiL0sZmgieVOPe" name="t5strain_3" dcml="0">
+      <labl>Please indicate how much you agree with the following statements regarding the NLP chatbot(s) you used today. - Working all day with NLP chatbots was a strain for me today.</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Strongly disagree</labl>
+        <catStat type="freq">16</catStat>
+      </catgry>
+      <catgry>
+        <catValu>2</catValu>
+        <labl>Disagree</labl>
+        <catStat type="freq">12</catStat>
+      </catgry>
+      <catgry>
+        <catValu>3</catValu>
+        <labl>Somewhat disagree</labl>
+        <catStat type="freq">8</catStat>
+      </catgry>
+      <catgry>
+        <catValu>4</catValu>
+        <labl>Neither agree nor disagree</labl>
+        <catStat type="freq">4</catStat>
+      </catgry>
+      <catgry>
+        <catValu>5</catValu>
+        <labl>Somewhat agree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>6</catValu>
+        <labl>Agree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>7</catValu>
+        <labl>Strongly agree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="eQnAeCZS9QVVfKKE" name="t5strain_4" dcml="0">
+      <labl>Please indicate how much you agree with the following statements regarding the NLP chatbot(s) you used today. - Today I felt burned out from using NLP chatbots.</labl>
+      <catgry>
+        <catValu>1</catValu>
+        <labl>Strongly disagree</labl>
+        <catStat type="freq">16</catStat>
+      </catgry>
+      <catgry>
+        <catValu>2</catValu>
+        <labl>Disagree</labl>
+        <catStat type="freq">15</catStat>
+      </catgry>
+      <catgry>
+        <catValu>3</catValu>
+        <labl>Somewhat disagree</labl>
+        <catStat type="freq">6</catStat>
+      </catgry>
+      <catgry>
+        <catValu>4</catValu>
+        <labl>Neither agree nor disagree</labl>
+        <catStat type="freq">2</catStat>
+      </catgry>
+      <catgry>
+        <catValu>5</catValu>
+        <labl>Somewhat agree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <catgry>
+        <catValu>6</catValu>
+        <labl>Agree</labl>
+        <catStat type="freq">1</catStat>
+      </catgry>
+      <catgry>
+        <catValu>7</catValu>
+        <labl>Strongly agree</labl>
+        <catStat type="freq">0</catStat>
+      </catgry>
+      <varFormat type="numeric">F40.0</varFormat>
+    </var>
+    <var ID="S1mX0T5UfYoDcR25" name="t5commitment_1" dcml="0">
+      <labl>Please indicate how conscientious you were in answering the questions. - 1</labl>
+      <sumStat type="min">0</sumStat>
+      <sumStat type="max">100</sumStat>
+      <sumStat type="mean">95.20652</sumStat>
+      <sumStat type="medn">100</sumStat>
+      <sumStat type="stdev">12.43404</sumStat>
+      <varFormat type="numeric">F40.2</varFormat>
+    </var>
+  </dataDscr>
+</codeBook>

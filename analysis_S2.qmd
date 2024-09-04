@@ -1,0 +1,4749 @@
+---
+title: "NLP Chatbots"
+author: "Anne-Kathrin Kleine, Eva Lermer, & Susanne Gaube"
+bibliography: "../../config/Products.bib"
+keywords: "artificial intelligence, mental healthcare"
+csl: "../../config/apa.csl"
+execute:
+  echo: false
+  warning: false
+  message: false
+  cache: true
+  include: false
+prefer-html: true
+format: 
+  docx:
+    reference-doc: "../../config/template_word.docx"
+  html:
+    toc: true
+    toc-depth: 3
+editor: 
+  markdown: 
+    wrap: 72
+---
+
+# Data preprocessing 
+
+```{r}
+source("R/data_preprocessing.R")
+library(tidyverse)
+```
+
+```{r}
+mydata <- load_sav_files("data/raw/raw_S2_200624")
+
+remove_duplicates <- function(df) {
+  df %>%
+    distinct(., PROLIFIC_PID, .keep_all = TRUE)
+}
+
+mydata <- lapply(mydata, remove_duplicates)
+
+mydata <- mydata$StudentChatGPT_T1.sav %>%
+  left_join(., mydata$StudentChatGPT_T2.sav
+            , by = "PROLIFIC_PID") %>%
+  left_join(., mydata$StudentChatGPT_T3.sav
+            , by = "PROLIFIC_PID") %>%  
+  left_join(., mydata$StudentChatGPT_T4.sav
+            , by = "PROLIFIC_PID") %>%
+  left_join(., mydata$StudentChatGPT_T5.sav
+            , by = "PROLIFIC_PID") 
+```
+
+
+```{r}
+# remove columns that are not needed
+mydata <- mydata %>% dplyr::select(-matches("Date|IPAddress|Status|Duration|Progress|Finished|Response|Recipient|External|Location|Channel|User|sonaid|t.ID.|comments|SC0|letters|birth|ID.y|ID.x.x|^ID$|ID.y.y|ID.x.x.x|ID.y.y.y"))
+
+names(mydata) <- tolower(names(mydata))
+```
+
+
+## Data export
+
+```{r}
+#####################################
+## START Export data and meta data ##
+#####################################
+
+# Save the entire meta_data_list into an .rds file
+saveRDS(mydata, "data/documented/meta_data_S2.rds")
+
+writexl::write_xlsx(mydata, "data/documented/mydata_S2.xlsx")
+
+###################################
+## END Export data and meta data ##
+###################################
+```
+
+## Data preparation 
+
+```{r}
+#######################################
+## Preparing data frame for analyses ##
+#######################################
+
+# Recode Personality variables https://socialwork.buffalo.edu/content/dam/socialwork/home/self-care-kit/brief-big-five-personality-inventory.pdf
+
+df_wide <- readxl::read_excel("data/documented/mydata_S2.xlsx")
+
+df <- df_wide %>% rename(t1personality_1_r = t1personality_1,
+                              t1personality_7_r = t1personality_7,
+                              t1personality_3_r = t1personality_3,
+                              t1personality_4_r = t1personality_4,
+                              t1personality_5_r = t1personality_5)
+
+df <- if ("t1personality_1_r" %in% names(df)) {
+  df %>% rename(t1personality_1 = t1personality_1_r) %>% 
+    mutate(t1personality_1 = 6 - t1personality_1)
+}
+
+df <- if ("t1personality_7_r" %in% names(df)) {
+  df %>% rename(t1personality_7 = t1personality_7_r) %>% 
+    mutate(t1personality_7 = 6 - t1personality_7)
+}
+
+df <- if ("t1personality_3_r" %in% names(df)) {
+  df %>% rename(t1personality_3 = t1personality_3_r) %>% 
+    mutate(t1personality_3 = 6 - t1personality_3)
+}
+
+df <- if ("t1personality_4_r" %in% names(df)) {
+  df %>% rename(t1personality_4 = t1personality_4_r) %>% 
+    mutate(t1personality_4 = 6 - t1personality_4)
+}
+
+df <- if ("t1personality_5_r" %in% names(df)) {
+  df %>% rename(t1personality_5 = t1personality_5_r) %>% 
+    mutate(t1personality_5 = 6 - t1personality_5)
+}
+
+
+
+# calculate means for personality variables
+
+df <- df %>%  
+  mutate(t1extraversion = rowMeans(dplyr::select(., t1personality_1, t1personality_6), na.rm = TRUE), t1personality_1=NULL, t1personality_6=NULL) %>% 
+  mutate(t1agreeableness = rowMeans(dplyr::select(., t1personality_2, t1personality_7), na.rm = TRUE), t1personality_2=NULL, t1personality_7=NULL) %>% 
+  mutate(t1conscientiousness = rowMeans(dplyr::select(., t1personality_3, t1personality_8), na.rm = TRUE), t1personality_3=NULL, t1personality_8=NULL) %>% 
+  mutate(t1neuroticism = rowMeans(dplyr::select(., t1personality_4, t1personality_9), na.rm = TRUE), t1personality_4=NULL, t1personality_9=NULL) %>% 
+  mutate(t1openness = rowMeans(dplyr::select(., t1personality_5, t1personality_10), na.rm = TRUE), t1personality_5=NULL, t1personality_10=NULL)
+
+
+
+## Create social influence variable
+df <- df %>%  
+  mutate(b1socinfnew = rowMeans(dplyr::select(., t2socinf_1, t2socinf_2), na.rm = TRUE)) %>% 
+  mutate(b1facilitatnew = rowMeans(dplyr::select(., t2facilitat_1, t2facilitat_2), na.rm = TRUE))
+
+# Create degrees variable
+df <- normalize_degree(df, "t1degree_4_text", "t1degree")
+
+df <- df %>% mutate(t1gender_binary = ifelse(t1gender == 1, 1, 
+                                             ifelse(is.na(t1gender), NA,
+                                                    0)))
+
+
+```
+
+
+```{r}
+# tooluse columns
+df_wide <- df %>% transform_toolused01_s2(.)
+  
+df <- transform_entries_toolused2(df_wide) # transform tool entries to unique tool names
+
+
+df <- df %>%
+  mutate(across(contains('toolused'), 
+                ~ifelse(. %in% c("AIVideoGenerator", "AIDungeon", "connectedpapers.com", "DeepL", "DeepL API", "GitHub", "ResearchGate"),  # remove all tools that are not NLP Chatbots
+                NA, .))) %>% 
+  mutate(across(contains('toolused'), 
+                ~ifelse(. %in% c("DeppGPT (Postillon)"),  # remove all tools that may not be used for study tasks
+                NA, .)))
+
+
+## Tools used
+df$toolsused <- paste(df$t1tooluse, ",", df$t2tooluse, ",", df$t3tooluse, ",",
+                      df$t4tooluse, ",", df$t5tooluse)
+
+df <- df %>%
+  mutate(toolsused = get_cleaned_unique_words(toolsused))
+
+df$uniquetoolsused <-  gsub("Not used", "", df$toolsused) %>%  str_trim(.) %>%
+  str_replace_all(., "\\s+", " ") %>% 
+  str_replace_all(., "\\s*,\\s*", ",") %>% 
+  str_replace_all(., ",\\s*,", ",") %>% 
+  str_replace_all(., "\\,*$", "")  %>% 
+  str_replace_all(., "\\,*^", "") %>% 
+  str_replace_all(., "^\\,", "") %>% 
+  str_replace_all(., ",{2,}", ",") %>% 
+  gsub('^\\,|\\,$', '', .)
+  
+df$uniquetoolsused <- lapply(stringi::stri_split(str=df$uniquetoolsused, fixed = ","),function(x) paste0(x[!duplicated(x)],collapse=',')) %>% map_chr(~ str_c(., collapse = ", ")) 
+
+df$uniquetoolsused[df$uniquetoolsused==""]<-NA
+
+
+name_vector <- unlist(strsplit(df$uniquetoolsused, ",")) %>% trimws(.)
+
+tool_vector <- refinr::key_collision_merge(
+name_vector,
+ignore_strings = NULL,
+bus_suffix = TRUE,
+dict = NULL
+)
+
+tool_vector <- sub("a section of a research paper in preparation for journal club", "Other", tool_vector) 
+tool_vector <- sub("ChatGPTCOPILOT", "ChatGPT, Copilot", tool_vector)
+tool_vector <- sub("Bingai", "Bing", tool_vector)
+tool_vector <- sub("JasperAI", "Jasper", tool_vector)
+tool_vector <- sub("meta", "MetaAI", tool_vector)
+tool_vector <- sub("Microsoft Bing", "Bing", tool_vector)
+tool_vector <- sub("Qestion AI", "Question AI", tool_vector)
+tool_vector <- sub("Quibolt", "Quillbot", tool_vector)
+tool_vector <- sub("Quilbot", "Quillbot", tool_vector)
+tool_vector <- sub("Used ChatGPTto today to help me underst", "ChatGPT", tool_vector)
+tool_vector <- sub("ChatGPTBingai", "ChatGPT, Bing", tool_vector)
+tool_vector <- sub("ChatGPTBing", "ChatGPT, Bing", tool_vector)
+tool_vector <- sub("ChatGPTMetaAI Capilot", "ChatGPT, MetaAI, Copilot", tool_vector)
+tool_vector <- unlist(strsplit(tool_vector, ",")) %>% trimws(.)
+
+
+sort(unique(tool_vector))
+
+
+df <- normalize_studies(df, "t1studies_10_text", "t1studies")
+
+df$t1studies <- factor(df$t1studies, labels = c("Engineering", "Social Sciences", "Humanities", 
+                                                 "Business & Law", "Medicine & Health", "Natural Sciences", 
+                                                 "Arts & Design", "Language Studies",
+                                                 "Computer Sciences"))
+
+# Values to assign 1
+subjects_to_match <- c("Engineering", "Medicine & Health", "Natural Sciences", 
+                       "Computer Sciences", "Computational Linguistics", 
+                       "Neuroscience")
+
+# Assigning 1 or 0
+df$t1studies_tech <- ifelse(df$t1studies %in% subjects_to_match, 1, 0)
+```
+
+
+```{r}
+
+## Tasks
+df$t2task <- paste(df$t2task_1, ",", df$t2task_2, ",", df$t2task_3, ",",
+                   df$t2task_4, ",", df$t2task_5, ",", df$t2task_6, ",",
+                   df$t2task_7, ",", df$t2task_8)
+df$t3task <- paste(df$t3task_1, ",", df$t3task_2, ",", df$t3task_3, ",",
+                   df$t3task_4, ",", df$t3task_5, ",", df$t3task_6, ",",
+                   df$t3task_7, ",", df$t3task_8)
+df$t4task <- paste(df$t4task_1, ",", df$t4task_2, ",", df$t4task_3, ",",
+                   df$t4task_4, ",", df$t4task_5, ",", df$t4task_6, ",",
+                   df$t4task_7, ",", df$t4task_8)
+df$t5task <- paste(df$t5task_1, ",", df$t5task_2, ",", df$t5task_3, ",",
+                   df$t5task_4, ",", df$t5task_5, ",", df$t5task_6, ",",
+                   df$t5task_7, ",", df$t5task_8)
+df$t6task <- paste(df$t6task_1, ",", df$t6task_2, ",", df$t6task_3, ",",
+                   df$t6task_4, ",", df$t6task_5, ",", df$t6task_6, ",",
+                   df$t6task_7, ",", df$t6task_8)
+
+
+
+df$tasks <- paste(df$t2task, ",", df$t3task, ",", df$t4task, ",",
+                      df$t5task, ",", df$t6task)
+
+df$uniquetasks <-  str_trim(df$tasks, side = "both") %>% # Remove leading and trailing commas and spaces
+  str_replace_all(., "NA", ",") %>% 
+  str_replace_all(., "\\s*,\\s*", ",") %>%  # Replace multiple commas and spaces with a single comma 
+  str_replace_all(., ",{2,}", ",") %>%  # Replace multiple consecutive commas with a single comma
+  str_replace_all(., "^,+|,+$", "") # Remove any leading or trailing commas from the clean string after replacements
+
+df$uniquetasks <- lapply(stringi::stri_split(str=df$uniquetasks, fixed = ","),function(x) paste0(x[!duplicated(x)],collapse=',')) %>% map_chr(~ str_c(., collapse = ", ")) 
+
+df$uniquetasks[df$uniquetasks==""]<-NA
+
+
+## Training 
+df <- concat_values_training_1(df)
+
+df <- data.frame(lapply(df, function(x) {if(is.character(x)) gsub("NA, |NA|, NA", "", x) else x})) # remove NA values from 
+
+df <- df %>%
+  mutate(t1training = ifelse(str_detect(t1training, "Other"), 
+                             str_replace_all(t1training, "Other", t1training_7_text), 
+                             t1training))
+
+df <- normalize_training(df)
+
+df <- df %>%
+  mutate(
+    t1training_doc = ifelse(grepl("Reading the documentation", t1training), 1, 0),
+    t1training_freetutor = ifelse(grepl("Free online tutorials or courses (e.g., on YouTube)", t1training), 1, 0),
+    t1training_freetutor = ifelse(grepl("Paid online tutorials or courses", t1training), 1, 0),
+    t1training_experiment = ifelse(grepl("Experimentation", t1training), 1, 0),
+    t1training_onlineforum = ifelse(grepl("Online forums", t1training), 1, 0),
+    t1training_unicourse = ifelse(grepl("University course", t1training), 1, 0),
+    t1training_instruct = ifelse(grepl("Direct instructions or training", t1training), 1, 0),
+    t1training_onlineforum = ifelse(grepl("Social media", t1training), 1, 0),
+    t1training_none = ifelse(grepl("None", t1training), 1, 0)
+  )
+
+df <- df %>%
+  mutate(
+    t1training_none = ifelse(t1training_none == 1 
+                            & (t1training_doc + t1training_freetutor  + t1training_experiment 
+                              + t1training_onlineforum + t1training_unicourse + t1training_instruct ) > 0, 
+                            0, t1training_none)
+  )
+```
+
+
+```{r}
+# Create country variable
+
+df <- df %>%
+  mutate(t1country_4_text = case_when(
+    t1country == 1 ~ "Germany",
+    t1country == 2 ~ "Austria",
+    t1country == 3 ~ "Switzerland",
+    TRUE ~ t1country_4_text
+  ))
+ 
+library(countrycode) # our powerhouse for standardizing country names
+
+df <- df %>%
+  # when country equals "T¸rkiye", change it to "Turkey"
+  mutate(t1country_4_text = case_when(t1country_4_text == "ENGLAND" ~ "United Kingdom",
+                               t1country_4_text == "england" ~ "United Kingdom",
+                               t1country_4_text == "SA" ~ "South Africa",
+                               t1country_4_text == "Soth Africa" ~ "South Africa",
+                               t1country_4_text == "South Afrıca" ~ "South Africa",
+                               t1country_4_text == "Wales" ~ "United Kingdom",
+                             # otherwise, leave it as is
+                             TRUE ~ t1country_4_text)) %>%
+  # standardize country names to iso3c and the countrycode country names
+  mutate(t1country = countryname(df$t1country_4_text)) 
+
+
+# Create studies variable
+df <- normalize_studies(df, "t1studies_10_text", "t1studies")
+
+df$t1studies <- factor(df$t1studies, labels = c("Engineering", "Social Sciences", "Humanities", 
+                                                 "Business & Law", "Medicine & Health", "Natural Sciences", 
+                                                 "Arts & Design", "Language Studies",
+                                                 "Computer Sciences"))
+
+# Create degrees variable
+df <- normalize_degree(df, "t1degree_4_text", "t1degree")
+
+df$t1degree <- factor(df$t1degree, labels = c("Bachelor", "Master", "PhD"))
+
+df <- df %>% mutate(t1gender_binary = ifelse(t1gender == 1, 1, 
+                                             ifelse(is.na(t1gender), NA,
+                                                    0)))
+
+df <- dplyr::mutate(df, id = row_number())
+
+# reverse code facilitating conditions 3
+df <-  df  %>% 
+    mutate(t2facilitat_3 = 8 - t2facilitat_3)
+```
+
+```{r}
+# Update the timespent columns
+df <- update_timespent(df, "t", "t", 5)
+
+df <- df %>%
+  filter(nchar(id.x) >= 20)
+
+df_full <- df
+
+```
+
+
+## Identify whether AI chatbot was used or not
+
+```{r}
+# count more than 2 occurrences of AI chatbot not used 
+cols <- c("t2tooluse", "t3tooluse", "t4tooluse", "t5tooluse")
+
+# Count the number of rows with "Not used" in more than three of the specified columns
+count_rows <- df %>%
+  rowwise() %>%  # Perform operations row-wise
+  mutate(not_used_count = sum(c_across(cols) == "Not used", na.rm = TRUE)) %>%  # Count "Not used" in specified columns
+  ungroup() %>%  # Ungroup after row-wise operation
+  filter(not_used_count > 3) %>%  # Filter rows with more than three "Not used"
+  nrow()  # Get the number of such rows
+
+cat("Participants removed because they have used AI chatbots on less than two days:", count_rows)
+
+cols <- c("t2tooluse", "t3tooluse", "t4tooluse", "t5tooluse")
+df <- df %>%
+  dplyr::filter(rowSums(dplyr::select(., all_of(cols)) == "Not used", na.rm = TRUE) <= 3)
+
+# make useful_1 NA if no tool used on that day 
+
+df <- df %>%
+      mutate(t2useful_1 = if_else(t2tooluse == "Not used", NA, t2useful_1, missing = t2useful_1)) %>%
+      mutate(t3useful_1 = if_else(t3tooluse == "Not used", NA, t3useful_1, missing = t3useful_1)) %>%
+      mutate(t4useful_1 = if_else(t4tooluse == "Not used", NA, t4useful_1, missing = t4useful_1)) %>%
+      mutate(t5useful_1 = if_else(t5tooluse == "Not used", NA, t5useful_1, missing = t5useful_1)) 
+```
+## Remove if not used at T1
+
+```{r}
+# Define the columns of interest
+cols <- c("t1useful_1")
+
+# Use dplyr to filter out rows where more than 3 of the specified columns are NA
+df_in <- df %>%
+  filter(rowSums(is.na(select(., all_of(cols)))) < 1)
+
+cat("Not participated in T1:", nrow(df) - nrow(df_in))
+
+df <- df_in
+
+
+```
+
+## Attention checks 
+
+```{r}
+########################
+### Attention checks ###
+########################
+
+df$failed_checks <- 0
+
+df <- df %>%
+  mutate(failed_checks = case_when(t1anx_8 != 3 ~ 1,
+                             # otherwise, leave it as is
+                             TRUE ~ failed_checks)) 
+
+sum(df$failed_checks[df$failed_checks == 1], na.rm = T)
+
+df <- df %>% 
+  filter(failed_checks < 1) %>%
+  dplyr::select(-matches("t1anx_8|failed_checks|commitment"))
+
+```
+
+## Remove if only one observation
+
+```{r}
+# Define the columns of interest
+cols <- c("t1useful_1", "t2useful_1", "t3useful_1", "t4useful_1", "t5useful_1")
+
+# Use dplyr to filter out rows where more than 3 of the specified columns are NA
+df_in <- df %>%
+  filter(rowSums(is.na(select(., all_of(cols)))) <= 3)
+
+# Define the columns of interest
+cols <- c("t2facilitat_1")
+
+df_in <- df_in %>%
+  filter(rowSums(is.na(select(., all_of(cols)))) < 1)
+cols <- c("t2socinf_1")
+df_in <- df_in %>%
+  filter(rowSums(is.na(select(., all_of(cols)))) < 1)
+
+cat("Participated in less than two surveys:", nrow(df) - nrow(df_in))
+
+df <- df_in
+
+```
+
+## Prepare longer data frame
+
+```{r}
+for (col in names(df)[which(names(df) == 't1tool'):which(names(df) == 't1experience')]){
+    names(df)[names(df) == col] <-  sub("^t", "b", col)
+}
+
+for (col in names(df)[which(names(df) == 't1receivetr'):which(names(df) == 't1wishtr')]){
+    names(df)[names(df) == col] <-  sub("t", "b", col)
+}
+
+for (col in names(df)[which(names(df) == 't1media'):which(names(df) == 't1degree_4_text')]){
+    names(df)[names(df) == col] <-  sub("t", "b", col)
+}
+
+longer <- df %>% dplyr::select_if(., is.numeric) %>% 
+  dplyr::select(-matches("failed_checks|t[1-8]id|commitment|prolific_pid")) %>% 
+ pivot_longer(matches("t1|t2|t3|t4|t5"),
+    names_pattern = "(^t.)(.*)",
+    names_to = c( "set", ".value"),
+    names_repair = "unique" # add this line
+ )
+
+longer <- longer %>%
+      group_by(id) %>%
+      fill(starts_with("socinf_"), .direction = "downup")
+
+
+longer <- longer %>%
+      group_by(id) %>%
+      fill(starts_with("gender_binary"), .direction = "downup")
+
+longer <- longer %>%
+      group_by(id) %>%
+      fill(starts_with("studies_tech"), .direction = "downup")
+
+longer <- longer %>%
+      group_by(id) %>%
+      fill(starts_with("facilitat_"), .direction = "downup")
+
+longer <- longer %>%
+      group_by(id) %>%
+      fill(starts_with("training_none"), .direction = "downup")
+```
+
+```{r}
+names(df) <- mgsub::mgsub(names(df), 
+                          c("anx_1$", "anx_3", "anx_5", "anx_6", "anx_7", "anx_9", 
+                            "anx_10", "anx_11"), 
+                          c("anxout_1", "anxout_3", "anxout_5", "anxout_6", "anxout_7", "anxout_9",
+                            "anxout_10", "anxout_11"))
+
+names(longer) <- mgsub::mgsub(names(longer), 
+                          c("b1anx_1$", "b1anx_3", "b1anx_5", "b1anx_6", "b1anx_7", "b1anx_9", 
+                            "b1anx_10", "b1anx_11"), 
+                          c("b1anx_1", "b1anxout_3", "b1anxout_5", "b1anxout_6", "b1anxout_7", "anxout_9",
+                            "b1anxout_10", "b1anxout_11"))
+
+names(df) <- mgsub::mgsub(names(df), 
+                          c("t2facilitat_3$", "t2facilitat_4"), 
+                          c("t2facilitatout_3", "t2facilitatout_4"))
+
+names(longer) <- mgsub::mgsub(names(longer), 
+                          c("facilitat_3$", "facilitat_4"), 
+                          c("facilitatout_3", "facilitatout_4"))
+
+names(df) <- mgsub::mgsub(names(df), 
+                          c("t2socinf_3$", "t2socinf_4"), 
+                          c("t2socinfout_3", "t2socinfout_4"))
+
+names(longer) <- mgsub::mgsub(names(longer), 
+                          c("socinf_3$", "socinf_4"), 
+                          c("socinfout_3", "socinfout_4"))
+```
+
+
+## Reliabilities 
+
+```{r}
+#| include: false
+#####################
+### Reliabilities ###
+#####################
+
+
+model <- '
+    level: 1
+        useful_w  =~  useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6 
+        ease_w =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+
+    level: 2
+        useful_b  =~  useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6 
+        ease_b =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        anx =~ b1anx_2 + b1anx_4 + b1anx_12
+
+'
+
+library(lavaan)
+fit <- sem(model, data = longer, cluster = "id", std.lv  = TRUE, verbose = FALSE, estimator="MLR")
+summary(fit, fit.measures=TRUE)
+
+alpha_within <- semTools::reliability(fit, what = c("alpha", "omega", "omega2", "omega3", "ave"),
+  return.total = FALSE, dropSingle = TRUE, omit.factors = character(0),
+  omit.indicators = character(0), omit.imps = c("no.conv", "no.se"))$within
+
+variables <- colnames(alpha_within) %>% gsub("_w", "", .)
+
+alpha_within <- alpha_within[1, ] %>% round(., 2) %>%  gsub("0.", ".", .) 
+
+alpha_between <- semTools::reliability(fit, what = c("alpha", "omega", "omega2", "omega3", "ave"),
+  return.total = FALSE, dropSingle = TRUE, omit.factors = character(0),
+  omit.indicators = character(0), omit.imps = c("no.conv", "no.se"))$id[1, ] %>% round(., 2) %>% gsub("0.", ".", .)
+
+rels <- cbind(variables, alpha_within, alpha_between) %>% data.frame(.)
+
+rels
+
+
+```
+
+
+## Composite dataframe and correlations 
+
+```{r}
+###################################
+### Composites and correlations ###
+###################################
+
+id <- df %>% dplyr::select(id)
+
+df_notnum <- df %>% dplyr::select_if(., negate(is.numeric)) %>% dplyr::select(b1country, b1country_4_text, b1studies, b1studies_10_text, b1degree, b1degree_4_text, t1training)
+
+df_oneitem <- df %>% dplyr::select_if(., is.numeric) %>% dplyr::select(-matches("socinf|facilitat|anx|reliable|pace|useful|ease|strain|over|gopro|id$"))
+
+comp_split <- df %>% dplyr::select_if(., is.numeric) %>% dplyr::select(matches("socinf|facilitat|anx|reliable|pace|useful|ease|strain|over|gopro")) %>% 
+  split.default(sub("_\\d{1,2}$", "", names(.))) 
+
+alph_split <- df %>% dplyr::select_if(., is.numeric) %>% dplyr::select(matches("socinf_|facilitat_|anx|reliable|pace|useful|ease|strain|over")) %>% 
+  split.default(sub("_\\d{1,2}$", "", names(.))) 
+
+comp <- purrr::map(comp_split, ~ rowMeans(.x), data = .x)
+
+alph <- purrr::map(alph_split, ~ psych::alpha(.x), data = .x) %>%
+  purrr::map(~ .x$total)
+
+# add demos and single items 
+comp_df <- do.call("cbind", comp) %>%
+  cbind(df_oneitem, df_notnum, .) 
+alph_df <- do.call("rbind", alph) %>% round(., 2)
+
+round(splithalfr::spearman_brown(df$t2facilitat_1, df$t2facilitat_2), 2)
+round(splithalfr::spearman_brown(df$t2socinf_1, df$t2socinf_2), 2)
+
+
+
+```
+
+## Data processing composite dataframe 
+
+```{r}
+###########################################
+### Preparation of composite data frame ###
+###########################################
+
+# rename t1 to b1
+exceptions <- comp_df %>% dplyr::select(matches("used|timespent|task|ease|over|pace|reliable|strain|useful")) %>% names(.)
+comp_df <- rename_t1b1(comp_df, exceptions)
+
+comp_df <- comp_df %>% rename(b1facilitat = t2facilitat,
+                              b1socinf = t2socinf)
+
+comp_df$b1uniquetoolsused <- df$uniquetoolsused
+comp_df$b1uniquetasks <- df$uniquetasks
+
+comp_df <- comp_df %>% 
+  relocate(starts_with("b1"), .after = last_col()) %>%
+  relocate(starts_with("t1"), .after = last_col()) %>%
+  relocate(starts_with("t2"), .after = last_col()) %>%
+  relocate(starts_with("t3"), .after = last_col()) %>%
+  relocate(starts_with("t4"), .after = last_col()) %>% 
+  relocate(starts_with("t5"), .after = last_col()) 
+
+
+df <- df %>% 
+  relocate(starts_with("b1"), .after = last_col()) %>%
+  relocate(starts_with("t1"), .after = last_col()) %>%
+  relocate(starts_with("t2"), .after = last_col()) %>%
+  relocate(starts_with("t3"), .after = last_col()) %>%
+  relocate(starts_with("t4"), .after = last_col()) %>% 
+  relocate(starts_with("t5"), .after = last_col()) 
+```
+
+```{r}
+NonNACount <- function(x) {
+  return(sum(!is.na(x)))
+}
+
+
+names(comp_df)[names(comp_df) == "t1anx"] <-  sub("t", "b", "t1anx")
+names(comp_df)[names(comp_df) == "t1experience"] <-  sub("t", "b", "t1experience")
+names(comp_df)[names(comp_df) == "t1receivetr"] <-  sub("t", "b", "t1receivetr")
+names(comp_df)[names(comp_df) == "t1wishtr"] <-  sub("t", "b", "t1wishtr")
+names(comp_df)[names(comp_df) == "t1gender"] <-  sub("t", "b", "t1gender")
+names(comp_df)[names(comp_df) == "t1languageprof"] <-  sub("t", "b", "t1languageprof")
+names(comp_df)[names(comp_df) == "t1extraversion"] <-  sub("t", "b", "t1extraversion")
+names(comp_df)[names(comp_df) == "t1agreeableness"] <-  sub("t", "b", "t1agreeableness")
+names(comp_df)[names(comp_df) == "t1conscientiousness"] <-  sub("t", "b", "t1conscientiousness")
+names(comp_df)[names(comp_df) == "t1neuroticism"] <-  sub("t", "b", "t1neuroticism")
+names(comp_df)[names(comp_df) == "t1openness"] <-  sub("t", "b", "t1openness")
+names(comp_df)[names(comp_df) == "t1training_none"] <-  sub("t", "b", "t1training_none")
+names(comp_df)[names(comp_df) == "t1gender_binary"] <-  sub("t", "b", "t1gender_binary")
+
+
+names(comp_df)[names(comp_df) == "tooluse_total"] <-  sub("tool", "b1tool", "tooluse_total")
+
+comp_df <- cbind(comp_df, df_notnum)
+
+longer_comp <- comp_df %>% 
+ pivot_longer(matches("t1|t2|t3|t4|t5|t6"),
+    names_pattern = "(t.)(.*)", 
+   names_to = c( "set", ".value")
+ ) %>% mutate(set = (as.numeric(textclean::mgsub(.$set, c("t", "_"), c("", "")))))
+
+
+longer_comp$id <- rep(seq(1,nrow(comp_df)), each=5)
+```
+
+## Select relevant columns for export
+
+```{r}
+df <- df %>% dplyr::select(-matches("sona|weekly_goal|sona"))
+longer_comp <- longer_comp %>% dplyr::select(-matches("sona"))
+```
+
+
+```{r}
+writexl::write_xlsx(longer_comp, "data/preprocessed/longer_comp.xlsx")
+writexl::write_xlsx(df, "data/preprocessed/df_wide.xlsx")
+```
+
+## Plotting the longitudinal data
+
+```{r}
+#| include: true
+
+ggplot(longer_comp, aes(x = ease, y = useful, color = as.factor(id), group = id)) + 
+  geom_point() + 
+  geom_line() + 
+  theme_classic(base_size = 18) + 
+  theme(legend.position = "none") + 
+  labs(title = "Ease of use by usefulness", y = "Usefulness", x = "Ease of use")
+```
+
+## Centering 
+
+```{r}
+longer_comp$strainahead <- lead(longer_comp$strain)
+longer_comp$timespentahead <- lead(longer_comp$timespent)
+
+# create person means
+variables <- c("ease", "useful", "timespent", "timespentahead", "pace", "reliable", "over", "strain", "strainahead", "noease", "nouseful", "nopace", "noreliable", "noover", "nostrain")
+longer_comp <- longer_comp %>% 
+  group_by(id) %>% 
+  mutate(across(all_of(variables), 
+                list(pmean = ~mean(., na.rm = TRUE)), 
+                .names = "{.col}.{.fn}")) %>%
+  ungroup()
+
+
+# Center level-1 predictors within cluster (CWC) 
+longer_comp <- calculate_CWC(longer_comp)
+
+# create grand means
+variables <- longer_comp %>% dplyr::select(matches("b1|f1|f2|wishtr|media|anx|facilitat|socinf")) %>% dplyr::select(where(is.numeric)) %>%  names(.)
+longer_comp <- longer_comp %>% 
+  mutate(across(all_of(variables), ~mean(., na.rm = TRUE), 
+                .names = "{.col}.gmean")) %>%
+  ungroup()
+
+
+# Center level-2 predictors 
+variables <- longer_comp %>% dplyr::select(matches("b1|f1|f2|wishtr|media|anx|extraversion|agreeableness|conscientiousness|neuroticism|openness|facilitat|socinf")) %>% dplyr::select(where(is.numeric)) %>%  names(.)
+longer_comp <- longer_comp %>%
+  mutate(across(all_of(variables), ~ . - mean(., na.rm = TRUE), .names = "{.col}.CGM"))
+
+longer_comp$tooluse <- as.factor(longer_comp$used)
+
+longer_comp$tooluseahead <- lead(longer_comp$used)
+
+longer_comp$tooluse_num <- as.numeric(levels(longer_comp$tooluse))[longer_comp$tooluse]
+longer_comp$tooluse_numahead <- longer_comp$tooluseahead
+```
+
+## Exclude NAs
+
+```{r}
+longer_comp_nona <- longer_comp %>% filter_at(vars(used), all_vars(!is.na(.))) 
+```
+
+
+```{r}
+library(openxlsx)
+writexl::write_xlsx(longer_comp, "data/preprocessed/longer_comp_centered.xlsx")
+writexl::write_xlsx(longer_comp_nona, "data/preprocessed/longer_comp_centered_nona.xlsx")
+
+longer_comp_short <- longer_comp %>%
+  group_by(id) %>%
+  filter(row_number()==1)
+
+longer_comp_short_nona <- longer_comp_nona %>%
+  group_by(id) %>%
+  filter(row_number()==1)
+```
+
+
+## Sample overviews
+
+```{r}
+## mean age, gender, country distribution ##
+round(mean(longer_comp_short_nona$b1age, na.rm = T), 2)
+round(sd(longer_comp_short_nona$b1age, na.rm = T), 2)
+DescTools::PercTable(longer_comp_short_nona$b1gender)
+sort(prop.table(table(longer_comp_short_nona$b1country)))
+
+name_vector <- longer_comp_short_nona$b1country
+name_freq <- table(name_vector)
+low_occurrence_names <- names(name_freq)[name_freq < 3]
+name_vector[name_vector %in% low_occurrence_names] <- "Other"
+name_freq <- sort(table(name_vector))
+name_freq <- data.frame(name_freq) %>% 
+  mutate(Percentage = paste0(100*round(Freq/sum(Freq),3), "%"),
+         perc = Freq/sum(Freq)) %>% select(name_vector, Freq, Percentage)
+
+## Study fields ##
+stud_freq <- table(longer_comp_short_nona$b1studies) %>% data.frame(.)
+stud_freq <- stud_freq[order(as.integer(stud_freq$Freq),decreasing = TRUE), ]
+stud_freq$Var1 <- reorder(stud_freq$Var1, stud_freq$Freq)
+
+stud_freq <- stud_freq %>% filter(Freq > 1)
+stud_freq <- data.frame(stud_freq) %>% 
+  mutate(Percentage = paste0(100*round(Freq/sum(Freq),3), "%"),
+         perc = Freq/sum(Freq)) %>% select(Var1, Freq, Percentage)
+
+coul <- RColorBrewer::brewer.pal(5, "Set2") 
+barplot(height=stud_freq$Freq,  names=str_wrap(stud_freq$Var1, 12), col=coul, cex.names = 0.8)
+
+## Degrees ##
+degree_freq <- table(longer_comp_short_nona$b1degree) %>% data.frame(.)
+prop.table(table(longer_comp_short_nona$b1degree))
+degree_freq <- degree_freq[order(as.integer(degree_freq$Freq),decreasing = TRUE), ]
+degree_freq$Var1 <- reorder(degree_freq$Var1, degree_freq$Freq)
+coul <- RColorBrewer::brewer.pal(5, "Set2") 
+barplot(height=degree_freq$Freq,  names=str_wrap(degree_freq$Var1, 12), col=coul, cex.names = 1.5)
+
+## Overview over tools used ##
+name_vector <- unlist(strsplit(longer_comp_short$b1uniquetoolsused, ",")) %>% trimws(.)
+name_freq <- table(name_vector)
+low_occurrence_names <- names(name_freq)[name_freq < 3]
+name_vector[name_vector %in% low_occurrence_names] <- "Other"
+name_freq <- table(name_vector)
+
+name_freq <- data.frame(name_freq) %>% 
+  mutate(Percentage = paste0(100*round(Freq/sum(Freq),3), "%"),
+         perc = Freq/sum(Freq))%>% select(name_vector, Freq, Percentage)
+
+name_freq <- name_freq[order(as.integer(name_freq$Freq),decreasing = TRUE), ]
+name_freq$name_vector <- reorder(name_freq$name_vector, name_freq$Freq)
+
+coul <- RColorBrewer::brewer.pal(5, "Set2") 
+barplot(height=name_freq$Freq, names=str_wrap(name_freq$name_vector, 12), col=coul, cex.names = 0.6)
+
+
+## Overview over tasks ##
+name_vector <- unlist(strsplit(longer_comp_short_nona$b1uniquetasks, ",")) %>% trimws(.)
+name_freq <- table(name_vector)
+#low_occurrence_names <- names(name_freq)[name_freq < 3]
+name_vector[name_vector %in% low_occurrence_names] <- "Other"
+name_freq <- table(name_vector)
+
+name_freq <- data.frame(name_freq) %>% 
+  mutate(Percentage = paste0(100*round(Freq/sum(Freq),2), "%"),
+         perc = Freq/sum(Freq))
+
+name_freq <- name_freq[order(as.integer(name_freq$Freq),decreasing = TRUE), ]
+name_freq$name_vector <- reorder(name_freq$name_vector, name_freq$Freq)
+
+coul <- RColorBrewer::brewer.pal(5, "Set2") 
+barplot(height=name_freq$Freq, names=str_wrap(name_freq$name_vector, 16), col=coul, cex.names = 0.7)
+```
+
+
+# Correlations
+
+```{r}
+longer_comp_rmssd <- longer_comp %>% drop_na(ease) %>% 
+mutate(rmss_ease = rmssd_id(.$ease, .$id)) 
+
+longer_comp_rmssd <- longer_comp_rmssd %>% drop_na(useful) %>% 
+mutate(rmss_useful = rmssd_id(.$useful, .$id)) 
+
+longer_comp_rmssd <- longer_comp_rmssd %>% drop_na(timespent) %>% 
+mutate(rmss_timespent = rmssd_id(.$timespent, .$id)) 
+
+
+longer_comp_rmssd <- longer_comp_rmssd %>% 
+  select(id, 
+         rmss_ease,
+         rmss_useful,
+         rmss_timespent,
+         ease,
+         useful, 
+         timespent,
+         b1anx,
+         b1age,
+         b1gender_binary,
+         b1experience,
+         b1media)
+
+within_between <- psych::statsBy(longer_comp_rmssd, "id", cors = TRUE, method="pearson",  use="pairwise")
+
+between <- round(within_between$rbg, 2)
+
+within_between$ci.bg
+round(within_between$pbg,3)
+```
+
+
+```{r}
+
+longer_comp$b1media <- rep(df$b1media, each = 5)
+
+longer_comp_corr <- longer_comp %>% 
+  select(id, 
+         ease,
+         useful, 
+         timespent,
+         b1anx,
+         b1facilitat,
+         b1socinf,
+         b1age,
+         b1gender_binary,
+         b1experience,
+         b1media) 
+
+within_between <- psych::statsBy(longer_comp_corr, "id", cors = TRUE, method="pearson",  use="pairwise")
+
+print(within_between, short = FALSE)
+within <- round(within_between$rwg,2)
+between <- round(within_between$rbg, 2)
+
+within_between$ci.wg
+within_between$ci.bg
+
+within_ci <- (within_between$ci.wg)
+between_ci <- (within_between$ci.wg)
+
+within[lower.tri(within)] <- NA
+between[upper.tri(between)] <- NA
+
+# Find the column index for the column named "b1anx.wg"
+col_index <- which(colnames(within) == "b1anx.wg")
+
+# Set the values in that column to NA
+within[, col_index] <- NA
+
+cortab <- as.matrix(within) 
+cortab[lower.tri(cortab, diag = TRUE)] <- between[lower.tri(between, diag = TRUE)]
+
+
+within_between$ci.wg$r.ci %>% arrange(., abs(r)) %>% mutate(r = round(r, 2))
+within_between$ci.bg$r.ci %>% arrange(., abs(r)) %>% mutate(r = round(r, 2)) # ab .18
+
+
+# ICC info
+ICC_1 <- sprintf("%.2f", round(within_between$ICC1[-1], 2))
+ICC_2 <- sprintf("%.2f", round(within_between$ICC2[-1], 2))
+ICC_1 <- gsub("0.", ".", ICC_1)
+ICC_2 <- gsub("0.", ".", ICC_2)
+ICC_12 <- cbind(ICC_1, ICC_2)
+
+```
+
+# Create cortable with additional info 
+```{r}
+mean <- longer_comp_corr %>% .[-1] %>% colMeans(., na.rm = T) %>% round(.,2) 
+sd <- cbind(apply(longer_comp_corr, 2, sd, na.rm = T)) %>% round(., 2) %>% .[-1]
+mean_sd <- cbind(mean,sd)
+
+corrs <- as.data.frame(cortab) %>% cbind(ICC_2, .)
+
+corrs <- corrs %>% 
+  mutate(across(c(ease.wg, useful.wg, timespent.wg, b1anx.wg, b1anx.wg, b1facilitat.wg,
+                  b1socinf.wg, b1age.wg, b1gender_binary.wg,
+                  b1experience.wg, b1media.wg), ~ numformat(.)))
+
+
+corrs <- rbind(corrs, c("", mean), c("", sd))
+
+rownames(corrs) <- c("PEOU", "PU", "Usage", "Anxiety", "FC", "SN", "Age", "Gender", "Experience", "Media", "M", "SD")
+colnames(corrs) <- c("ICC", "PEOU", "PU", "Usage", "Anxiety", "FC", "SN", "Age", "Gender", "Experience", "Media")
+
+corrs[corrs == "NA"] <- NA
+corrs[corrs == "1.00"] <- NA
+html_table <- corrs %>% tibble::rownames_to_column(.) %>% flextable::flextable(.) 
+ 
+library(officer)
+library(flextable)
+sect_properties <- prop_section(
+  page_size = page_size(orient = "landscape",
+                        width = 8.3, height = 11.7),
+  type = "continuous",
+  page_margins = page_mar()
+)
+
+html_table %>% flextable::save_as_docx( path = "output/cortableS2.docx", pr_section = sect_properties)
+```
+
+## Prepare data for lagged relationships
+
+```{r}
+longer <- 
+    longer %>%
+    group_by(id) %>%
+    mutate(lead.timespent = dplyr::lead(timespent, n = 1, default = NA))
+
+longer <- 
+    longer %>%
+      group_by(id) %>% fill(starts_with("studies_tech"), .direction = "downup")  
+
+```
+
+
+# Difference tests 
+
+## Preparation 
+
+```{r}
+library(readxl)
+longer_comp_short_nona_S1 <- read_excel("data/preprocessed/longer_comp_short_nona_S1.xlsx")
+longer_comp_S1 <- read_excel("data/preprocessed/longer_comp_S1.xlsx")
+
+longer_full <- df_full %>%
+  rename(id = id) %>% 
+  dplyr::select(-matches("failed_checks|t[1-8]id|commitment")) %>% 
+ pivot_longer(matches("t1|t2|t3|t4|t5|t6|t7|t8"),
+    names_pattern = "(^t.)(.*)",
+    names_to = c( "set", ".value"),
+    names_repair = "unique" # add this line
+ )
+
+longer_full <- longer_full %>%
+      group_by(id) %>%
+      fill(starts_with("training_none"), .direction = "downup") %>% 
+      fill(starts_with("studies_tech"), .direction = "downup") %>% 
+      fill(starts_with("media"), .direction = "downup") %>%
+      fill(starts_with("b1experience"), .direction = "downup") %>%
+      fill(starts_with("b1anx_"), .direction = "downup") %>%
+      fill(starts_with("b1gender"), .direction = "downup") %>%
+      fill(starts_with("b1age"), .direction = "downup")
+
+id <- df_full %>% dplyr::select(id)
+
+df_notnum_full <- df_full %>% dplyr::select_if(., negate(is.numeric)) %>% dplyr::select(t1country, t1country_4_text, t1studies, t1studies_10_text, t1degree, t1degree_4_text, t1training)
+
+df_oneitem_full <- df_full %>% dplyr::select_if(., is.numeric) %>% dplyr::select(-matches("useful|ease|anx|strain|over|gopro|id$"))
+
+df_full <- df_full %>% select(-matches("t7|t8"))
+
+
+comp_split_full <- df_full %>% dplyr::select_if(., is.numeric) %>% dplyr::select(matches("useful|ease|anx|strain|over")) %>% 
+  split.default(sub("_\\d{1,2}$", "", names(.))) 
+
+
+comp_full <- purrr::map(comp_split_full, ~ rowMeans(.x), data = .x)
+
+
+# add demos and single items 
+comp_df_full <- do.call("cbind", comp_full) %>%
+  cbind(df_oneitem_full, .) %>% cbind(., id)
+
+comp_df_full$b1media <- df_full$t1media
+comp_df_full$b1country <- df_full$t1country
+comp_df_full$b1studies <- df_full$t1studies
+comp_df_full$b1studiestech <- df_full$t1studies_tech
+comp_df_full$b1degree <- df_full$t1degree
+comp_df_full$b1training <- df_full$t1training
+comp_df_full$b1toolsused <- df_full$toolsused
+comp_df_full$b1toolsused <- df_full$t2task
+comp_df_full$b1uniquetoolsused <- df_full$uniquetoolsused
+comp_df_full$b1uniquetasks <- df_full$uniquetasks
+
+longer_comp_full <- comp_df_full %>% 
+ pivot_longer(matches("t2|t3|t4|t5|t6"),
+    names_pattern = "(t.)(.*)", 
+   names_to = c( "set", ".value")
+ ) %>% mutate(set = (as.numeric(textclean::mgsub(.$set, c("t", "_"), c("", "")))))
+
+longer_comp_short_nona_full <- longer_comp_full %>%
+  group_by(id) %>%
+  filter(row_number()==1)
+
+not_include <- subset(longer_comp_short_nona_full, !(id %in% longer_comp_short_nona$id))
+```
+
+
+```{r}
+mod <- t.test(longer_comp_short_nona$b1anx, not_include$t1anx, alternative = "two.sided", var.equal = FALSE)
+sd(longer_comp_short_nona$b1anx)
+report::report_statistics(mod)
+
+
+mod <- t.test(longer_comp_short_nona$b1facilitat, not_include$b1facilitatnew, alternative = "two.sided", var.equal = FALSE)
+sd(longer_comp_short_nona$b1anx)
+report::report_statistics(mod)
+
+mod <- t.test(longer_comp_short_nona$b1socinf, not_include$b1socinfnew, alternative = "two.sided", var.equal = FALSE)
+sd(longer_comp_short_nona$b1anx)
+report::report_statistics(mod)
+
+# S1 VS S2
+mod <- t.test(longer_comp_short_nona$b1anx, longer_comp_short_nona_S1$b1anx, alternative = "two.sided", var.equal = FALSE)
+report::report_statistics(mod)
+
+mod <- t.test(longer_comp_short_nona$b1experience, not_include$t1experience, alternative = "two.sided", var.equal = FALSE)
+sd(longer_comp_short_nona$b1anx)
+report::report_statistics(mod)
+
+# S1 VS S2
+mod <- t.test(longer_comp_short_nona$b1experience, longer_comp_short_nona_S1$b1experience, alternative = "two.sided", var.equal = FALSE)
+report::report_statistics(mod)
+
+
+studies_table <- rbind(table(longer_comp_short_nona$b1studies_tech), table(not_include$b1studiestech))
+# Perform chi-square test
+chisq_test <- chisq.test(studies_table, correct = F)
+# Print the result
+report::report(chisq_test)
+
+studies_table <- rbind(table(longer_comp_short_nona$b1studies_tech), table(longer_comp_short_nona_S1$b1studiestech))
+# Perform chi-square test
+chisq_test <- chisq.test(studies_table, correct = F)
+# Print the result
+report::report(chisq_test)
+
+
+mod <- t.test(longer_comp_short_nona$ease, not_include$t1ease, alternative = "two.sided", var.equal = FALSE)
+sd(longer_comp_short_nona$ease)
+sd(not_include$ease, na.rm = T)
+report::report_statistics(mod)
+
+# S1 VS S2
+mod <- t.test(longer_comp_short_nona$ease, longer_comp_short_nona_S1$ease, alternative = "two.sided", var.equal = FALSE)
+report::report_statistics(mod)
+
+mod <- t.test(longer_comp_short_nona$useful, not_include$t1useful, alternative = "two.sided", var.equal = FALSE)
+sd(longer_comp_short_nona$useful)
+sd(not_include$useful, na.rm = T)
+report::report_statistics(mod)
+
+# S1 VS S2
+mod <- t.test(longer_comp_short_nona$useful, longer_comp_short_nona_S1$useful, alternative = "two.sided", var.equal = FALSE)
+report::report_statistics(mod)
+
+# S1 VS S2
+mod <- t.test(longer_comp_short_nona$timespent, longer_comp_short_nona_S1$timespent, alternative = "two.sided", var.equal = FALSE)
+report::report_statistics(mod)
+
+mod <- t.test(longer_comp_short_nona$b1age, not_include$t1age, alternative = "two.sided", var.equal = FALSE)
+sd(longer_comp_short_nona$useful)
+sd(not_include$useful, na.rm = T)
+report::report_statistics(mod)
+
+# S1 VS S2
+mod <- t.test(longer_comp_short_nona$b1age, longer_comp_short_nona_S1$b1age, alternative = "two.sided", var.equal = FALSE)
+report::report_statistics(mod)
+
+mod <- t.test(longer_comp_short_nona$b1media, not_include$b1media, alternative = "two.sided", var.equal = FALSE)
+sd(longer_comp_short_nona$useful)
+sd(not_include$useful, na.rm = T)
+report::report_statistics(mod)
+
+# S1 VS S2
+mod <- t.test(longer_comp_short_nona$b1media, longer_comp_short_nona_S1$b1media, alternative = "two.sided", var.equal = FALSE)
+report::report_statistics(mod)
+
+gender_table <- rbind(table(longer_comp_short_nona$b1gender_binary), table(not_include$t1gender_binary))
+# Perform chi-square test
+chisq_test <- chisq.test(gender_table, correct = F)
+# Print the result
+report::report(chisq_test)
+
+# S1 VS S2
+gender_table <- rbind(table(longer_comp_short_nona$b1gender_binary), table(longer_comp_short_nona_S1$b1gender_binary))
+# Perform chi-square test
+chisq_test <- chisq.test(gender_table, correct = F)
+# Print the result
+report::report(chisq_test)
+
+```
+
+# Comparisons of variations Study 1 and Study 2
+
+```{r}
+cols <- intersect(names(longer_comp_S1), names(longer_comp))
+longer_comp_comp_S1 <- longer_comp_S1[, cols]
+
+longer_comp_comp_S1$set <- longer_comp_comp_S1$set -1
+longer_comp_comp <- longer_comp[, cols]
+
+longer_comp_comp_S1$group <- "Study 1"
+longer_comp_comp$group <- "Study 2"
+
+combined_data <- rbind(longer_comp_comp_S1, longer_comp_comp)
+```
+
+```{r}
+library(varian)
+
+# RMSS Ease
+rmss_ease_S1 <- longer_comp_comp_S1 %>% drop_na(ease) %>% 
+mutate(rmss_ease = rmssd_id(.$ease, .$id)) %>% group_by(id) %>% summarize(rmss_ease = mean(rmss_ease)) 
+
+round(mean(rmss_ease_S1$rmss_ease), 2)
+round(sd(rmss_ease_S1$rmss_ease), 2)
+
+rmss_ease_S2 <- longer_comp_comp %>% drop_na(ease) %>% 
+mutate(rmss_ease = rmssd_id(.$ease, .$id)) %>% group_by(id) %>% summarize(rmss_ease = mean(rmss_ease)) 
+
+round(mean(rmss_ease_S2$rmss_ease), 2)
+round(sd(rmss_ease_S2$rmss_ease), 2)
+
+rmss_ease_S1$group <- 1
+rmss_ease_S2$group <- 2
+combined_data_rmss <- rbind(rmss_ease_S1, rmss_ease_S2)
+
+# Kruskall Test
+library(rcompanion)
+shapiro.test(combined_data_rmss$rmss_ease)
+kruskal.test(rmss_ease ~ group, data = combined_data_rmss)
+
+
+summary_data <- combined_data %>%
+  group_by(group, set) %>%
+  summarize(mean_score = mean(ease, na.rm = TRUE),
+            sd_score = sd(ease, na.rm = TRUE))
+
+
+# Calculate within-person variance for each participant
+within_person_variance <- combined_data %>%
+  group_by(id, group) %>%
+  summarize(within_variance = var(ease, na.rm = TRUE)) %>%
+  ungroup()
+
+# Filter out near-zero and zero variances
+within_person_variance <- within_person_variance %>%
+  filter(within_variance > 1e-6)
+
+# Create the plot to visualize within-person variance
+plot_within_variance_ease <- ggplot(within_person_variance, aes(x = group, y = within_variance, color = group)) +
+  geom_boxplot(outlier.shape = NA) +                       # Remove default outliers
+  geom_point(size = 1, alpha = 0.6, 
+             position = position_jitter(width = 0.2)) +    # Add individual points with jitter
+  scale_y_log10(limits = c(0.01, 10), breaks = c(0.01, 0.1, 1, 10)) +  # Apply log transformation to y-axis and set limits
+  labs(
+       x = "Study",
+       y = "Within-person variance PEOU (log scale)") +
+  theme_minimal(base_size = 10) +                           # Use a minimal theme for cleaner look
+  theme(
+    text = element_text(size = 8),   
+    axis.title.x=element_blank(),
+    axis.text = element_text(size = 8), 
+    legend.position = "none",                               # Optionally remove legend
+    panel.background = element_rect(fill = "white", color = "white"),       # Set panel background to white
+    plot.background = element_rect(fill = "white", color = "white")         # Set plot background to white
+  )
+
+
+# Save the plot as a TIFF file
+ggsave("output/Within_Person_Variance_ease.tiff", plot_within_variance_ease, width = 5, height = 3, dpi = 300)
+
+
+
+# RMSS Useful
+rmss_useful_S1 <- longer_comp_comp_S1 %>% drop_na(useful) %>% 
+mutate(rmss_useful = rmssd_id(.$useful, .$id)) %>% group_by(id) %>% summarize(rmss_useful = mean(rmss_useful)) 
+
+round(mean(rmss_useful_S1$rmss_useful), 2)
+round(sd(rmss_useful_S1$rmss_useful), 2)
+
+rmss_useful_S2<- longer_comp_comp %>% drop_na(useful) %>% 
+mutate(rmss_useful = rmssd_id(.$useful, .$id)) %>% group_by(id) %>% summarize(rmss_useful = mean(rmss_useful)) 
+
+round(mean(rmss_useful_S2$rmss_useful), 2)
+round(sd(rmss_useful_S2$rmss_useful), 2)
+
+summary_data <- combined_data %>%
+  group_by(group, set) %>%
+  summarize(mean_score = mean(useful, na.rm = TRUE),
+            sd_score = sd(useful, na.rm = TRUE))
+
+
+rmss_useful_S1$group <- 1
+rmss_useful_S2$group <- 2
+combined_data_rmss <- rbind(rmss_useful_S1, rmss_useful_S2)
+
+# Kruskall Test
+library(rcompanion)
+shapiro.test(combined_data_rmss$rmss_useful)
+kruskal.test(rmss_useful ~ group, data = combined_data_rmss)
+
+# Calculate within-person variance for each participant
+within_person_variance <- combined_data %>%
+  group_by(id, group) %>%
+  summarize(within_variance = var(useful, na.rm = TRUE)) %>%
+  ungroup()
+
+# Filter out near-zero and zero variances
+within_person_variance <- within_person_variance %>%
+  filter(within_variance > 1e-6)
+
+# Create the plot to visualize within-person variance
+plot_within_variance_useful <- ggplot(within_person_variance, aes(x = group, y = within_variance, color = group)) +
+  geom_boxplot(outlier.shape = NA) +                       # Remove default outliers
+  geom_point(size = 1, alpha = 0.6, 
+             position = position_jitter(width = 0.2)) +    # Add individual points with jitter
+  scale_y_log10(limits = c(0.01, 10), breaks = c(0.01, 0.1, 1, 10)) +  # Apply log transformation to y-axis and set limits
+  labs(
+       x = "Study",
+       y = "Within-person variance PU (log scale)") +
+  theme_minimal(base_size = 10) +                           # Use a minimal theme for cleaner look
+  theme(
+    text = element_text(size = 8),     
+    axis.text = element_text(size = 8), 
+    axis.title.x=element_blank(),
+    legend.position = "none",                               # Optionally remove legend
+    panel.background = element_rect(fill = "white", color = "white"),       # Set panel background to white
+    plot.background = element_rect(fill = "white", color = "white")         # Set plot background to white
+  )
+
+
+# Save the plot as a TIFF file
+ggsave("output/Within_Person_Variance_useful.tiff", plot_within_variance_useful, width = 5, height = 3, dpi = 300)
+
+
+# RMSS Timespent
+rmss_timespent_S1 <- longer_comp_comp_S1 %>% drop_na(timespent) %>% 
+mutate(rmss_timespent = rmssd_id(.$timespent, .$id)) %>% group_by(id) %>% summarize(rmss_timespent = mean(rmss_timespent)) 
+
+round(mean(rmss_timespent_S1$rmss_timespent), 2)
+round(sd(rmss_timespent_S1$rmss_timespent), 2)
+
+rmss_timespent_S2<- longer_comp_comp %>% drop_na(timespent) %>% 
+mutate(rmss_timespent = rmssd_id(.$timespent, .$id)) %>% group_by(id) %>% summarize(rmss_timespent = mean(rmss_timespent)) 
+
+round(mean(rmss_timespent_S2$rmss_timespent), 2)
+round(sd(rmss_timespent_S2$rmss_timespent), 2)
+
+summary_data <- combined_data %>%
+  group_by(group, set) %>%
+  summarize(mean_score = mean(timespent, na.rm = TRUE),
+            sd_score = sd(timespent, na.rm = TRUE))
+
+rmss_timespent_S1$group <- 1
+rmss_timespent_S2$group <- 2
+combined_data_rmss <- rbind(rmss_timespent_S1, rmss_timespent_S2)
+
+# Kruskall Test
+library(rcompanion)
+shapiro.test(combined_data_rmss$rmss_timespent)
+kruskal.test(rmss_timespent ~ group, data = combined_data_rmss)
+
+# Calculate within-person variance for each participant
+within_person_variance <- combined_data %>%
+  group_by(id, group) %>%
+  summarize(within_variance = var(timespent, na.rm = TRUE)) %>%
+  ungroup()
+
+# Filter out near-zero and zero variances
+within_person_variance <- within_person_variance %>%
+  filter(within_variance > 1e-6)
+
+# Create the plot to visualize within-person variance
+plot_within_variance_timespent <- ggplot(within_person_variance, aes(x = group, y = within_variance, color = group)) +
+  geom_boxplot(outlier.shape = NA) +                       # Remove default outliers
+  geom_point(size = 1, alpha = 0.6, 
+             position = position_jitter(width = 0.2)) +    # Add individual points with jitter
+  scale_y_log10(limits = c(0.01, 10), breaks = c(0.01, 0.1, 1, 10)) +  # Apply log transformation to y-axis and set limits
+  labs(
+       x = "Study",
+       y = "Within-person variance Usage (log scale)") +
+  theme_minimal(base_size = 10) +                           # Use a minimal theme for cleaner look
+  theme(
+    text = element_text(size = 8), 
+    axis.text = element_text(size = 8), 
+    axis.title.x=element_blank(),
+    legend.position = "none",                               # Optionally remove legend
+    panel.background = element_rect(fill = "white", color = "white"),       # Set panel background to white
+    plot.background = element_rect(fill = "white", color = "white")         # Set plot background to white
+  )
+
+
+# Save the plot as a TIFF file
+ggsave("output/Within_Person_Variance_usage.tiff", plot_within_variance_timespent, width = 5, height = 3, dpi = 300)
+
+```
+
+
+# Unconditional models 
+
+```{r}
+library(lme4)
+library(lmerTest)
+ease <-lmer(ease~1+(1|id),data=longer_comp_nona)
+summary(ease,p.kr=TRUE)
+
+useful <-lmer(useful~1+(1|id),data=longer_comp_nona)
+summary(useful,p.kr=TRUE)
+
+strain <-lmer(strain~1+(1|id),data=longer_comp_nona)
+summary(strain,p.kr=TRUE)
+
+timespent <-lmer(timespent~1+(1|id),data=longer_comp_nona)
+summary(timespent,p.kr=TRUE)
+
+```
+# Multilevel factor analysis 
+
+```{r}
+
+longer <- longer %>% drop_na(timespent)
+
+model <- '
+    level: 1
+        useful_w  =~  useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6 
+        ease_w =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+
+    level: 2
+        useful_b  =~  useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6 
+        ease_b =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        b_anx =~  b1anx_2 + b1anx_4 + b1anx_12
+        b_facilitat =~  facilitat_1 + facilitat_2 
+        b_socinf =~  socinf_1 + socinf_2 
+'
+
+library(lavaan)
+fit <- sem(model, data = longer, cluster = "id", std.lv  = TRUE, verbose = FALSE)
+sum <- summary(fit, fit.measures=TRUE, standardized = TRUE)
+
+#modificationindices(fit, sort = T)
+```
+
+```{r}
+# Extracting relevant fit indices
+fit_indices <- sum$fit
+chi <- fit_indices["chisq"]
+df <- fit_indices["df"]
+rmsea <- fit_indices["rmsea"]
+cfi <- fit_indices["cfi"]
+tli <- fit_indices["tli"]
+srmr_within <- fit_indices["srmr_within"]
+srmr_between <- fit_indices["srmr_between"]
+
+# Evaluating fit indices based on common thresholds
+evaluation_message <- paste0("Model fit indices: ", "Chisq = ",round(chi, 2), ", df = ", df,   ", RMSEA = ", round(rmsea, 2), ", CFI = ", round(cfi, 2), ", TLI = ", round(tli, 2), ", within-person SRMR = ", round(srmr_within, 2), ", between-person SRMR = ", round(srmr_between, 2)) 
+
+```
+
+```{r}
+model <- '
+    level: 1
+        useful_w  =~  useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6 + ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+
+    level: 2
+        useful_b  =~  useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6 + ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        b_anx =~  b1anx_2 + b1anx_4 + b1anx_12
+        b_facilitat =~  facilitat_1 + facilitat_2 
+        b_socinf =~  socinf_1 + socinf_2
+
+'
+
+library(lavaan)
+fit <- sem(model, data = longer, cluster = "id", std.lv  = TRUE, verbose = FALSE, estimator="MLR")
+sum <- summary(fit, fit.measures=TRUE)
+```
+
+```{r}
+# Extracting relevant fit indices
+fit_indices <- sum$fit
+chi <- fit_indices["chisq"]
+df <- fit_indices["df"]
+rmsea <- fit_indices["rmsea"]
+cfi <- fit_indices["cfi"]
+tli <- fit_indices["tli"]
+srmr_within <- fit_indices["srmr_within"]
+srmr_between <- fit_indices["srmr_between"]
+
+# Evaluating fit indices based on common thresholds
+evaluation_message <- paste0("Model fit indices: ", "Chisq = ",round(chi, 2), ", df = ", df,   ", RMSEA = ", round(rmsea, 2), ", CFI = ", round(cfi, 2), ", TLI = ", round(tli, 2), ", within-person SRMR = ", round(srmr_within, 2), ", between-person SRMR = ", round(srmr_between, 2)) 
+```
+
+
+```{r}
+
+longer <- longer %>% drop_na(timespent)
+
+model <- '
+    level: 1
+        useful_w  =~  useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6 
+        ease_w =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+
+    level: 2
+        useful_b  =~  useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6 
+        ease_b =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        b_anx =~  b1anx_2 + b1anx_4 + b1anx_12
+        b_facilitat =~  facilitat_1 + facilitat_2 + socinf_1 + socinf_2
+'
+
+library(lavaan)
+fit <- sem(model, data = longer, cluster = "id", std.lv  = TRUE, verbose = FALSE)
+sum <- summary(fit, fit.measures=TRUE, standardized = TRUE)
+
+#modificationindices(fit, sort = T)
+```
+
+```{r}
+# Extracting relevant fit indices
+fit_indices <- sum$fit
+chi <- fit_indices["chisq"]
+df <- fit_indices["df"]
+rmsea <- fit_indices["rmsea"]
+cfi <- fit_indices["cfi"]
+tli <- fit_indices["tli"]
+srmr_within <- fit_indices["srmr_within"]
+srmr_between <- fit_indices["srmr_between"]
+
+# Evaluating fit indices based on common thresholds
+evaluation_message <- paste0("Model fit indices: ", "Chisq = ",round(chi, 2), ", df = ", df,   ", RMSEA = ", round(rmsea, 2), ", CFI = ", round(cfi, 2), ", TLI = ", round(tli, 2), ", within-person SRMR = ", round(srmr_within, 2), ", between-person SRMR = ", round(srmr_between, 2)) 
+
+```
+
+# Hypotheses tests 
+
+## Perceived ease of use and perceived usefulness serially mediate a) the negative relationship of AI chatbot anxiety and b) the positive relationship of facilitating conditions with the daily time spent using AI chatbots. 
+
+
+```{r}
+library(lavaan)
+model1 <- '
+        level: 1
+        
+        # mediator
+        useful ~ wb_m1*ease 
+        timespent ~ wb_m2*useful + ease
+               
+        level: 2
+        
+        # direct effect
+        timespent ~ bc2*b1anx 
+        ease ~ ba2*b1anx + b1age + b1gender_binary + b1media 
+        
+        # mediators
+        useful ~ bb_m1*ease + b1anx + b1age + b1gender_binary + b1media 
+        timespent ~ bb_m2*useful + b1age + b1gender_binary + b1media + ease
+
+        # indirect effect (a*b)
+        anx_useful_between := ba2*bb_m1
+        anx_useful_within := ba2*wb_m1
+        
+        ease_usage_between := bb_m1*bb_m2
+        ease_usage_within := wb_m1*wb_m2
+        
+        ba2bb := ba2*bb_m1*bb_m2
+        ba2wb := ba2*wb_m1*wb_m2
+
+
+        # total effect
+        b2total := bc2 + (ba2*bb_m1*bb_m2)
+        w2total := bc2 + (ba2*wb_m1*wb_m2)
+        
+    '
+      
+fit1 <- sem(model = model1, data = longer_comp, cluster = "id")
+sum <- summary(fit1, std=T, fit.measures = TRUE)
+
+```
+
+```{r}
+model1 <- '
+        level: 1
+        w_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        w_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6
+        w_timespent =~ timespent 
+        timespent~~0*timespent
+        
+        # mediator
+        w_useful ~ wb_m1*w_ease  
+        w_timespent ~ wb_m2*w_useful + w_ease 
+               
+        level: 2
+        b_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        b_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6
+        b_socinf =~ socinf_1 + socinf_2 
+        b_anx =~ b1anx_2 + b1anx_4 + b1anx_12
+        b_facilitat =~ facilitat_1 + facilitat_2 
+
+        b_timespent =~ timespent 
+        timespent~~0*timespent
+        
+        # direct effect
+        b_timespent ~ bc2*b_anx + bc3*b_facilitat + sc*b_socinf
+        b_ease ~ ba2*b_anx + ba3*b_facilitat + b_socinf + b1age + b1gender + b1experience + b1media
+        
+        # mediators
+        b_useful ~  b_anx + b_facilitat + sa*b_socinf + bb_m1*b_ease + b1age + b1gender + b1experience + b1media 
+        b_timespent ~ bb_m2*b_useful + b_ease + b1age + b1gender + b1experience + b1media 
+
+        # indirect effect (a*b)
+        anx_useful_between := ba2*bb_m1
+        anx_useful_within := ba2*wb_m1
+        
+        facil_useful_between := ba3*bb_m1
+        facil_useful_within := ba3*wb_m1
+        
+        ease_usage_between := bb_m1*bb_m2
+        ease_usage_within := wb_m1*wb_m2
+        
+        ba2bb := ba2*bb_m1*bb_m2
+        ba3bb := ba3*bb_m1*bb_m2
+        
+        ba2wb := anx_useful_within*wb_m2
+        ba3wb := ba3*wb_m1*wb_m2
+        
+        bsabb := sa*bb_m2
+        bsawb := sa*wb_m2
+
+        # total effect
+        b2total := bc2 + (ba2*bb_m1*bb_m2)
+        b3total := bc3 + (ba3*bb_m1*bb_m2)
+
+        w2total := bc2 + (ba2*wb_m1*wb_m2)
+        w3total := bc3 + (ba3*wb_m1*wb_m2)
+        
+        bstotal := sc + (sa*bb_m2)
+        wstotal := sc + (sa*wb_m2)
+    '
+      
+fit1 <- sem(model = model1, data = longer, cluster = "id")
+sum <- summary(fit1, std=T, fit.measures = TRUE)
+
+semTools::monteCarloCI(fit1, nRep = 50000, standardized = F)
+    
+```
+
+
+
+
+```{r}
+# Extract the parameter estimates dataframe
+regs <- parameterestimates(fit1, standardized = T)
+
+
+# Select only the rows where the operation is a regression ("~")
+regression_coefficients <- regs %>%
+  filter(op == "~") %>%
+  select(lhs, rhs, est, se, ci.lower, ci.upper, pvalue) %>% 
+  mutate_if(is.numeric, round, digits = 3)
+
+
+# Rename the columns for a clearer table
+regression_coefficients <- regression_coefficients %>%
+  rename(
+    Dependent_Variable = lhs,
+    Independent_Variable = rhs,
+    Estimate = est,
+    Std_Error = se,
+    CI_lower = ci.lower,
+    CI_upper = ci.upper,
+    P_Value = pvalue
+  )
+
+# Create a flextable object
+regression_table <- flextable::flextable(regression_coefficients)
+regression_table %>% flextable::save_as_docx( path = "output/mediation1.docx")
+
+```
+
+```{r}
+# Extracting relevant fit indices
+fit_indices <- sum$fit
+chi <- fit_indices["chisq"]
+df <- fit_indices["df"]
+rmsea <- fit_indices["rmsea"]
+cfi <- fit_indices["cfi"]
+tli <- fit_indices["tli"]
+srmr_within <- fit_indices["srmr_within"]
+srmr_between <- fit_indices["srmr_between"]
+
+# Evaluating fit indices based on common thresholds
+evaluation_message <- paste0("Model fit indices: ", "Chisq = ",round(chi, 2), ", df = ", df,   ", RMSEA = ", round(rmsea, 2), ", CFI = ", round(cfi, 2), ", TLI = ", round(tli, 2), ", within-person SRMR = ", round(srmr_within, 2), ", between-person SRMR = ", round(srmr_between, 2)) 
+
+```
+
+```{r}
+
+# Re-extracting the parameter estimates dataframe
+pe_stand <- standardizedSolution(fit1) %>%
+  filter(op == ":=") %>%
+  select(lhs, rhs, est.std, se, ci.lower, ci.upper, pvalue) 
+
+ci.lower_mc_s <- semTools::monteCarloCI(fit1, standardized = T, nRep = 50000)$ci.lower
+ci.upper_mc_s <- semTools::monteCarloCI(fit1, standardized = T, nRep = 50000)$ci.upper
+
+pe_stand['ci.lower'] <- ci.lower_mc_s
+pe_stand['ci.upper'] <- ci.upper_mc_s
+
+pe_stand <- pe_stand %>% 
+  mutate(ci.lower = numformat_3(ci.lower)) %>% 
+  mutate(ci.upper = numformat_3(ci.upper)) %>%
+  mutate_if(is.numeric, round, digits = 3) %>% 
+  mutate(CI = paste0("[",ci.lower, ", ", ci.upper, "]")) %>% 
+  rename(se_stand = se, CI_stand = CI) %>% 
+  select(lhs, est.std, se_stand, CI_stand)
+
+
+pe <- parameterestimates(fit1) %>%
+  filter(op == ":=") %>%
+  select(lhs, rhs, est, se, ci.lower, ci.upper, pvalue)
+
+set.seed(1234)
+ci.lower_mc <- semTools::monteCarloCI(fit1, nRep = 50000)$ci.lower
+ci.upper_mc <- semTools::monteCarloCI(fit1, nRep = 50000)$ci.upper
+
+pe['ci.lower'] <- ci.lower_mc
+pe['ci.upper'] <- ci.upper_mc
+
+pe <- pe %>% 
+  mutate_if(is.numeric, round, digits = 3) %>%  
+  mutate(pvalue = numformat_3(pvalue)) %>%
+  mutate(CI = paste0("[",ci.lower, ", ", ci.upper, "]")) %>% 
+  select(est, se, CI, pvalue)
+
+indirect <- cbind(pe_stand, pe)  %>% 
+  mutate(across(c(est.std, se_stand), ~ numformat_3(.))) 
+
+indirect <- indirect[- grep("total", indirect$lhs),]
+
+x <- c("anx_useful_between", "facil_useful_between", "ease_usage_between", "ba2bb", "ba3bb", "bsabb",
+       "anx_useful_within", "facil_useful_within", "ease_usage_within", "ba2wb", "ba3wb", "bsawb")
+
+indirect <- indirect %>%
+  slice(match(x, lhs))
+
+# Create a flextable object
+mediation_paths <- flextable::flextable(indirect)
+
+mediation_paths %>% flextable::save_as_docx( path = "output/indirect2.docx")
+
+```
+
+
+```{r}
+pars.regressions <- parameterestimates(fit1)[ parameterestimates(fit1)[,'op']=='~', c(1,3,7,8,10,11,12)] %>% 
+  mutate_if(is.numeric, round, digits = 3) %>%  
+  mutate(pvalue = numformat_3(pvalue)) %>%
+  mutate(CI = paste0("[",ci.lower, ", ", ci.upper, "]")) %>% 
+  select(lhs, rhs, est, se, CI, pvalue)  %>% 
+  arrange(lhs, asc = F)
+
+target <- c("b_ease", "b_useful", "b_timespent", "w_useful", "w_timespent")
+pars.regressions$lhs = factor(pars.regressions$lhs, levels = target)
+pars.regressions <- pars.regressions[order(pars.regressions$lhs), ]
+
+pars.regressions <- flextable::flextable(pars.regressions)
+pars.regressions %>% flextable::save_as_docx( path = "output/coefficients2.docx")
+
+```
+
+
+
+# Exploratory 
+
+## H5: Perceived ease of use and perceived usefulness serially mediate a) the negative relationship of NLP chatbot anxiety and b) the positive relationship of facilitating conditions with the next-day time spent using AI chatbots. 
+
+## H6: Perceived usefulness mediates the positive relationship of social influence with the next-day time spent using AI chatbots.
+
+
+```{r}
+model1 <- '
+        level: 1
+        w_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        w_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6
+        w_timespent =~ lead.timespent 
+        lead.timespent~~0*lead.timespent
+        
+        # mediator
+        w_useful ~ wb_m1*w_ease 
+        w_timespent ~ wb_m2*w_useful 
+               
+        level: 2
+        b_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        b_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6
+        b_socinf =~ socinf_1 + socinf_2 + socinf_3 + socinf_4
+        
+        socinf_3 ~~ socinf_4
+        socinf_1 ~~ socinf_2
+        
+        b_anx =~ b1anx_1 + b1anx_2 + b1anx_3 + b1anx_4 + b1anx_5 + b1anx_6 + b1anx_7 +
+        b1anx_9 + b1anx_10 + b1anx_11 + b1anx_12
+        b_facilitat =~ facilitat_1 + facilitat_2 + facilitat_3 + facilitat_4
+        
+        b_timespent =~ lead.timespent 
+        lead.timespent~~0*lead.timespent
+        
+        # direct effect
+        b_timespent ~ bc2*b_anx + bc3*b_facilitat 
+        b_ease ~ ba2*b_anx + ba3*b_facilitat 
+        
+        # mediators
+        b_useful ~ bb_m1*b_ease + sa*b_socinf + b_anx + b_facilitat 
+        b_timespent ~ bb_m2*b_useful + b1age + b1gender + b1media + sc*b_socinf
+
+        # indirect effect (a*b)
+        ba2bb := ba2*bb_m1*bb_m2
+        ba3bb := ba3*bb_m1*bb_m2
+        
+        ba2wb := ba2*wb_m1*wb_m2
+        ba3wb := ba3*wb_m1*wb_m2
+        
+        bsabb := sa*bb_m2
+        bsawb := sa*wb_m2
+
+        # total effect
+        b2total := bc2 + (ba2*bb_m1*bb_m2)
+        b3total := bc3 + (ba3*bb_m1*bb_m2)
+
+        w2total := bc2 + (ba2*wb_m1*wb_m2)
+        w3total := bc3 + (ba3*wb_m1*wb_m2)
+        
+        bstotal := sc + (sa*bb_m2)
+        wstotal := sc + (sa*wb_m2)
+    '
+      
+fit1 <- sem(model = model1, data = longer, cluster = "id")
+summary(fit1, std=T, fit.measures = TRUE)
+    
+```
+
+## H7: Experience moderates:
+
+### H7a: the negative relationship of AI chatbot anxiety with perceived ease of use.
+
+### H7b: the positive relationship of ease of use with perceived usefulness.
+
+### H7c: the positive relationship of social influence with perceived usefulness.
+
+
+```{r}
+longer <- semTools::indProd(longer, var1=6:16, var2=2, match = FALSE, meanC = TRUE, residualC = FALSE, doubleMC = FALSE, namesProd = NULL) # (b)anxiety*experience
+longer <- semTools::indProd(longer, var1=63:66, var2=2, match = FALSE, meanC = TRUE, residualC = FALSE, doubleMC = FALSE, namesProd = NULL) # (b)facilitat*experience
+longer <- semTools::indProd(longer, var1=59:62, var2=2, match = FALSE, meanC = TRUE, residualC = FALSE, doubleMC = FALSE, namesProd = NULL) # (b)socinf*experience
+longer <- semTools::indProd(longer, var1=39:44, var2=2, match = FALSE, meanC = TRUE, residualC = FALSE, doubleMC = FALSE, namesProd = NULL) # (b/w)ease*experience
+```
+
+```{r}
+model1 <- '
+        level: 1
+        w_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        w_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6
+        w_timespent =~ timespent 
+        timespent~~0*timespent
+        
+        w_easeexp =~ ease_1.b1experience + ease_2.b1experience + ease_3.b1experience + 
+        ease_4.b1experience + ease_5.b1experience + ease_6.b1experience
+        
+        ## residual correlations between items and their product terms
+        ease_1 ~~ ease_1.b1experience
+        ease_2 ~~ ease_2.b1experience
+        ease_3 ~~ ease_3.b1experience
+        ease_4 ~~ ease_4.b1experience
+        ease_5 ~~ ease_5.b1experience
+        ease_6 ~~ ease_6.b1experience
+        
+        # mediator
+        w_useful ~ w_ease + wb_m1*w_easeexp 
+        w_timespent ~ wb_m2*w_useful 
+               
+        level: 2
+        b_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        b_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6
+        b_socinf =~ socinf_1 + socinf_2 + socinf_3 + socinf_4
+        b_experience =~ b1experience
+        b1experience~~0*b1experience
+        
+        socinf_3 ~~ socinf_4
+        socinf_1 ~~ socinf_2
+        
+        b_anx =~ b1anx_1 + b1anx_2 + b1anx_3 + b1anx_4 + b1anx_5 + b1anx_6 + b1anx_7 +
+        b1anx_9 + b1anx_10 + b1anx_11 + b1anx_12
+        b_facilitat =~ facilitat_1 + facilitat_2 + facilitat_3 + facilitat_4
+        
+        b_timespent =~ timespent 
+        timespent~~0*timespent
+        
+        ## moderators 
+        
+        b_easeexp =~ ease_1.b1experience + ease_2.b1experience + ease_3.b1experience + 
+        ease_4.b1experience + ease_5.b1experience + ease_6.b1experience
+        
+        b_anxexp =~ b1anx_1.b1experience + b1anx_2.b1experience + b1anx_3.b1experience + 
+        b1anx_4.b1experience + b1anx_5.b1experience + b1anx_6.b1experience +
+        b1anx_7.b1experience + b1anx_9.b1experience + b1anx_10.b1experience +
+        b1anx_11.b1experience + b1anx_12.b1experience
+        
+        b_facilitatexp =~ facilitat_1.b1experience + facilitat_2.b1experience +
+        facilitat_3.b1experience + facilitat_4.b1experience 
+        
+        b_socinfexp =~ socinf_1.b1experience + socinf_2.b1experience + 
+        socinf_3.b1experience + socinf_4.b1experience 
+        
+        ## residual correlations between items and their product terms
+        ease_1 ~~ ease_1.b1experience
+        ease_2 ~~ ease_2.b1experience
+        ease_3 ~~ ease_3.b1experience
+        ease_4 ~~ ease_4.b1experience
+        ease_5 ~~ ease_5.b1experience
+        ease_6 ~~ ease_6.b1experience
+        
+        b1anx_1 ~~ b1anx_1.b1experience
+        b1anx_2 ~~ b1anx_2.b1experience
+        b1anx_3 ~~ b1anx_3.b1experience
+        b1anx_4 ~~ b1anx_4.b1experience
+        b1anx_5 ~~ b1anx_5.b1experience
+        b1anx_6 ~~ b1anx_6.b1experience
+        b1anx_7 ~~ b1anx_7.b1experience
+        b1anx_9 ~~ b1anx_9.b1experience
+        b1anx_10 ~~ b1anx_10.b1experience
+        b1anx_11 ~~ b1anx_11.b1experience
+        b1anx_12 ~~ b1anx_12.b1experience
+        
+        facilitat_1 ~~ facilitat_1.b1experience
+        facilitat_2 ~~ facilitat_2.b1experience
+        facilitat_3 ~~ facilitat_3.b1experience
+        facilitat_4 ~~ facilitat_4.b1experience
+        
+        socinf_1 ~~ socinf_1.b1experience
+        socinf_2 ~~ socinf_2.b1experience
+        socinf_3 ~~ socinf_3.b1experience
+        socinf_4 ~~ socinf_4.b1experience
+        
+        
+        # direct effect
+        b_timespent ~ bc2*b_anx + bc3*b_facilitat + b1age + b1gender + b1media + b_experience
+        b_useful ~ b_anx + b_facilitat + b_ease + b_experience
+        
+        # mediator effects
+        b_ease ~ ba2*b_anxexp + ba3*b_facilitatexp + b_anx + b_facilitat + b_experience
+        b_useful ~ bb_m1*b_easeexp + sa*b_socinfexp +  b_socinf
+        b_timespent ~ bb_m2*b_useful  + sc*b_socinf 
+
+        # indirect effect (a*b)
+        ba2bb := ba2*bb_m1*bb_m2
+        ba3bb := ba3*bb_m1*bb_m2
+        
+        ba2wb := ba2*wb_m1*wb_m2
+        ba3wb := ba3*wb_m1*wb_m2
+        
+        bsabb := sa*bb_m2
+        bsawb := sa*wb_m2
+
+        # total effect
+        b2total := bc2 + (ba2*bb_m1*bb_m2)
+        b3total := bc3 + (ba3*bb_m1*bb_m2)
+
+        w2total := bc2 + (ba2*wb_m1*wb_m2)
+        w3total := bc3 + (ba3*wb_m1*wb_m2)
+        
+        bstotal := sc + (sa*bb_m2)
+        wstotal := sc + (sa*wb_m2)
+    '
+      
+fit1 <- sem(model = model1, data = longer, cluster = "id")
+summary(fit1, std=T, fit.measures = TRUE)
+    
+```
+
+## H1: Perceived ease of use and perceived usefulness serially mediate a) the negative relationship of AI chatbot anxiety with the daily time spent using AI chatbots.
+
+```{r}
+library(lavaan)
+model1 <- '
+        level: 1
+        w_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        w_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6
+        w_timespent =~ timespent 
+        timespent~~0*timespent
+        
+        # mediator
+        w_useful ~ wb_m1*w_ease 
+        w_timespent ~ wb_m2*w_useful 
+               
+        level: 2
+        b_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        b_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6
+        b_facilitat =~  facilitat_1 + facilitat_2 
+        b_socinf =~  socinf_1 + socinf_2
+        
+        b_anx =~  b1anx_2 + b1anx_4 + b1anx_12
+
+        b_timespent =~ timespent 
+        timespent~~0*timespent
+        
+        # direct effect
+        b_timespent ~ bc2*b_anx 
+        b_ease ~ ba2*b_anx 
+        
+        # mediators
+        b_useful ~ bb_m1*b_ease + b_anx 
+        b_timespent ~ bb_m2*b_useful + b1age + b1gender + b1media + studies_tech 
+
+        # indirect effect (a*b)
+        anx_useful_between := ba2*bb_m1
+        anx_useful_within := ba2*wb_m1
+        
+        ease_usage_between := bb_m1*bb_m2
+        ease_usage_within := wb_m1*wb_m2
+        
+        ba2bb := ba2*bb_m1*bb_m2
+        ba2wb := ba2*wb_m1*wb_m2
+
+
+        # total effect
+        b2total := bc2 + (ba2*bb_m1*bb_m2)
+        w2total := bc2 + (ba2*wb_m1*wb_m2)
+        
+    '
+      
+fit1 <- sem(model = model1, data = longer, cluster = "id")
+sum <- summary(fit1, std=T, fit.measures = TRUE)
+```
+
+
+
+```{r}
+# Extract the parameter estimates dataframe
+pe <- parameterestimates(fit1, standardized = T)
+
+# Select only the rows where the operation is a regression ("~")
+regression_coefficients <- pe %>%
+  filter(op == "~") %>%
+  select(lhs, rhs, est, se, ci.lower, ci.upper, pvalue) %>% 
+  mutate_if(is.numeric, round, digits = 3)
+
+# Rename the columns for a clearer table
+regression_coefficients <- regression_coefficients %>%
+  rename(
+    Dependent_Variable = lhs,
+    Independent_Variable = rhs,
+    Estimate = est,
+    Std_Error = se,
+    CI_lower = ci.lower,
+    CI_upper = ci.upper,
+    P_Value = pvalue
+  )
+
+# Create a flextable object
+regression_table <- flextable::flextable(regression_coefficients)
+regression_table %>% flextable::save_as_docx( path = "output/mediation1.docx")
+
+standardizedSolution(fit1) %>%
+  filter(op == "~") %>% 
+  select(lhs, rhs, est.std, ci.lower, ci.upper, pvalue) %>% 
+  mutate_if(is.numeric, round, digits = 2)
+
+```
+
+```{r}
+# Extracting relevant fit indices
+fit_indices <- sum$fit
+chi <- fit_indices["chisq"]
+df <- fit_indices["df"]
+rmsea <- fit_indices["rmsea"]
+cfi <- fit_indices["cfi"]
+tli <- fit_indices["tli"]
+srmr_within <- fit_indices["srmr_within"]
+srmr_between <- fit_indices["srmr_between"]
+
+# Evaluating fit indices based on common thresholds
+evaluation_message <- paste0("Model fit indices: ", "Chisq = ",round(chi, 2), ", df = ", df,   ", RMSEA = ", round(rmsea, 2), ", CFI = ", round(cfi, 2), ", TLI = ", round(tli, 2), ", within-person SRMR = ", round(srmr_within, 2), ", between-person SRMR = ", round(srmr_between, 2)) 
+
+```
+
+```{r}
+
+# Re-extracting the parameter estimates dataframe
+pe <- standardizedSolution(fit1)
+
+# Filter rows where the paths are part of the mediation model (including indirect effect)
+mediation_paths <-  pe %>%
+  filter(op == ":=") %>%
+  select(lhs, rhs, est.std, se, ci.lower, ci.upper, pvalue) %>% 
+  mutate_if(is.numeric, round, digits = 3) %>% 
+  mutate(CI = paste0("[",ci.lower, ", ", ci.upper, "]")) %>% 
+  select(lhs, est.std, se, CI, pvalue)
+
+# Create a flextable object
+mediation_paths <- flextable::flextable(mediation_paths)
+
+mediation_paths %>% flextable::save_as_docx( path = "output/indirect1.docx")
+
+```
+
+## H1: Perceived ease of use mediates a) the negative relationship of AI chatbot anxiety and b) the positive relationship of facilitating conditions with daily perceived usefulness of AI chatbots.
+
+
+```{r}
+model <- '
+        level: 1
+        w_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        w_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6
+        
+        # mediator
+        w_useful ~ wb*w_ease 
+               
+        level: 2
+        b_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        b_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6
+        # b_socinf =~ socinf_1 + socinf_2 + socinf_3 + socinf_4
+        # socinf_1 ~~ socinf_2
+        # socinf_3 ~~ socinf_4
+        
+        b_anx =~ b1anx_1 + b1anx_2 + b1anx_3 + b1anx_4 + b1anx_5 + b1anx_6 + b1anx_7 +
+        b1anx_9 + b1anx_10 + b1anx_11 + b1anx_12
+        b_facilitat =~ facilitat_1 + facilitat_2 + facilitat_3 + facilitat_4
+        
+        # direct effect
+        b_useful ~ bc2*b_anx + bc3*b_facilitat  + b1age + b1gender + b1media
+        b_ease ~  ba2*b_anx + ba3*b_facilitat + b1age + b1gender + b1media
+        
+        # mediator
+        b_useful ~ bb*b_ease
+        
+        # indirect effect (a*b)
+        ba2bb := ba2*bb
+        ba2wb := ba2*wb
+        
+        ba3bb := ba3*bb
+        ba3wb := ba3*wb
+        
+        # total effect
+        b2total := bc2 + (ba2*bb)
+        w2total := bc2 + (ba2*wb)
+        
+        b3total := bc3 + (ba3*bb)
+        w3total := bc3 + (ba3*wb)
+    '
+      
+fit <- sem(model = model, data = longer, cluster = "id")
+summary(fit, std=T, fit.measures = TRUE)
+    
+```
+
+### Probing anxiety effect 
+
+#### Indirect effect through ease of use
+
+```{r}
+model_indir <- '
+        level: 1
+        w_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        w_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6
+        
+        # mediator
+        w_useful ~ wb*w_ease 
+               
+        level: 2
+        b_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        b_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6
+        b_socinf =~ socinf_1 + socinf_2 + socinf_3 + socinf_4
+        socinf_1 ~~ socinf_2
+        socinf_3 ~~ socinf_4
+        
+        b_anx =~ b1anx_1 + b1anx_2 + b1anx_3 + b1anx_4 + b1anx_5 + b1anx_6 + b1anx_7 +
+        b1anx_9 + b1anx_10 + b1anx_11 + b1anx_12
+        b_facilitat =~ facilitat_1 + facilitat_2 + facilitat_3 + facilitat_4
+        
+        # direct effect
+        b_useful ~ bc2*b_anx + bc3*b_facilitat + si*b_socinf + b1age + b1gender + b1media
+        b_ease ~  ba2*b_anx + ba3*b_facilitat + b1age + b1gender + b1media
+        
+        # mediator
+        b_useful ~ bb*b_ease
+        
+        # indirect effect (a*b)
+        ba2bb := ba2*bb
+        ba2wb := ba2*wb
+        
+        ba3bb := ba3*bb
+        ba3wb := ba3*wb
+        
+        # total effect
+        b2total := bc2 + (ba2*bb)
+        w2total := bc2 + (ba2*wb)
+        
+        b3total := bc3 + (ba3*bb)
+        w3total := bc3 + (ba3*wb)
+        
+    '
+      
+fit_indir <- sem(model = model_indir, data = longer, cluster = "id")
+summary(fit_indir, std=T, fit.measures = TRUE)
+    
+```
+
+#### Direct effects only
+
+```{r}
+model_dir <- '
+        level: 1
+        w_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        w_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6
+        
+        # mediator
+        w_useful ~ wb*w_ease 
+               
+        level: 2
+        b_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        b_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6
+        b_socinf =~ socinf_1 + socinf_2 + socinf_3 + socinf_4
+        socinf_1 ~~ socinf_2
+        socinf_3 ~~ socinf_4
+        
+        b_anx =~ b1anx_1 + b1anx_2 + b1anx_3 + b1anx_4 + b1anx_5 + b1anx_6 + b1anx_7 +
+        b1anx_9 + b1anx_10 + b1anx_11 + b1anx_12
+        b_facilitat =~ facilitat_1 + facilitat_2 + facilitat_3 + facilitat_4
+        
+        # direct effect
+        b_useful ~ bc2*b_anx + bc3*b_facilitat + si*b_socinf + b1age + b1gender + b1media
+        b_ease ~ ba3*b_facilitat + b1age + b1gender + b1media
+        
+        # mediator
+        b_useful ~ bb*b_ease
+        
+        # constraint
+        b_ease ~~ 0*b_anx
+    '
+      
+fit_dir <- sem(model = model_dir, data = longer, cluster = "id")
+summary(fit_dir, std=T, fit.measures = TRUE)
+    
+```
+
+```{r}
+anova(fit_dir, fit_indir)
+```
+
+### Probing facilitating conditions
+
+#### Indirect effect through ease of use
+
+```{r}
+model_indir <- '
+        level: 1
+        w_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        w_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6
+        
+        # mediator
+        w_useful ~ wb*w_ease 
+               
+        level: 2
+        b_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        b_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6
+        b_socinf =~ socinf_1 + socinf_2 + socinf_3 + socinf_4
+        socinf_1 ~~ socinf_2
+        socinf_3 ~~ socinf_4
+        
+        b_anx =~ b1anx_1 + b1anx_2 + b1anx_3 + b1anx_4 + b1anx_5 + b1anx_6 + b1anx_7 +
+        b1anx_9 + b1anx_10 + b1anx_11 + b1anx_12
+        b_facilitat =~ facilitat_1 + facilitat_2 + facilitat_3 + facilitat_4
+        
+        # direct effect
+        b_useful ~ bc2*b_anx + bc3*b_facilitat + si*b_socinf + b1age + b1gender + b1media
+        b_ease ~  ba2*b_anx + ba3*b_facilitat + b1age + b1gender + b1media
+        
+        # mediator
+        b_useful ~ bb*b_ease
+        
+        # indirect effect (a*b)
+        ba2bb := ba2*bb
+        ba2wb := ba2*wb
+        
+        ba3bb := ba3*bb
+        ba3wb := ba3*wb
+        
+        # total effect
+        b2total := bc2 + (ba2*bb)
+        w2total := bc2 + (ba2*wb)
+        
+        b3total := bc3 + (ba3*bb)
+        w3total := bc3 + (ba3*wb)
+        
+    '
+      
+fit_indir <- sem(model = model_indir, data = longer, cluster = "id")
+summary(fit_indir, std=T, fit.measures = TRUE)
+    
+```
+
+#### Direct effects only
+
+```{r}
+model_dir <- '
+        level: 1
+        w_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        w_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6
+        
+        # mediator
+        w_useful ~ wb*w_ease 
+               
+        level: 2
+        b_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        b_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6
+        b_socinf =~ socinf_1 + socinf_2 + socinf_3 + socinf_4
+        socinf_1 ~~ socinf_2
+        socinf_3 ~~ socinf_4
+        
+        b_anx =~ b1anx_1 + b1anx_2 + b1anx_3 + b1anx_4 + b1anx_5 + b1anx_6 + b1anx_7 +
+        b1anx_9 + b1anx_10 + b1anx_11 + b1anx_12
+        b_facilitat =~ facilitat_1 + facilitat_2 + facilitat_3 + facilitat_4
+        
+        # direct effect
+        b_useful ~ bc2*b_anx + bc3*b_facilitat + si*b_socinf + b1age + b1gender + b1media
+        b_ease ~  ba2*b_anx 
+        
+        # mediator
+        b_useful ~ bb*b_ease
+        
+        b_ease ~~ 0*b_facilitat
+        
+    '
+      
+fit_dir <- sem(model = model_dir, data = longer, cluster = "id")
+summary(fit_dir, std=T, fit.measures = TRUE)
+    
+```
+
+```{r}
+anova(fit_si_dir, fit_si_indir)
+```
+
+## H2: Social influence is directly related to daily perceived usefulness. 
+
+### Indirect effect through ease of use
+
+```{r}
+model_si_indir <- '
+        level: 1
+        w_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        w_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6
+        
+        # mediator
+        w_useful ~ wb*w_ease 
+               
+        level: 2
+        b_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        b_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6
+        b_socinf =~ socinf_1 + socinf_2 + socinf_3 + socinf_4
+        socinf_1 ~~ socinf_2
+        socinf_3 ~~ socinf_4
+        
+        b_anx =~ b1anx_1 + b1anx_2 + b1anx_3 + b1anx_4 + b1anx_5 + b1anx_6 + b1anx_7 +
+        b1anx_9 + b1anx_10 + b1anx_11 + b1anx_12
+        b_facilitat =~ facilitat_1 + facilitat_2 + facilitat_3 + facilitat_4
+        
+        # direct effect
+        b_useful ~ bc2*b_anx + bc3*b_facilitat + bc4*b_socinf + b1age + b1gender + b1media
+        b_ease ~  ba2*b_anx + ba3*b_facilitat + ba4*b_socinf + b1age + b1gender + b1media
+        
+        # mediator
+        b_useful ~ bb*b_ease
+        
+        # indirect effect (a*b)
+        ba2bb := ba2*bb
+        ba2wb := ba2*wb
+        
+        ba3bb := ba3*bb
+        ba3wb := ba3*wb
+        
+        ba4bb := ba4*bb
+        ba4wb := ba4*wb
+        
+        # total effect
+        b2total := bc2 + (ba2*bb)
+        w2total := bc2 + (ba2*wb)
+        
+        b3total := bc3 + (ba3*bb)
+        w3total := bc3 + (ba3*wb)
+        
+        b4total := bc4 + (ba4*bb)
+        w4total := bc4 + (ba4*wb)
+    '
+      
+fit_si_indir <- sem(model = model_si_indir, data = longer, cluster = "id")
+summary(fit_si_indir, std=T, fit.measures = TRUE)
+    
+```
+
+### Direct effect only
+
+```{r}
+model_si_dir <- '
+        level: 1
+        w_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        w_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6
+        
+        # mediator
+        w_useful ~ wb*w_ease 
+               
+        level: 2
+        b_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        b_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6
+        b_socinf =~ socinf_1 + socinf_2 + socinf_3 + socinf_4
+        socinf_1 ~~ socinf_2
+        socinf_3 ~~ socinf_4
+        
+        b_anx =~ b1anx_1 + b1anx_2 + b1anx_3 + b1anx_4 + b1anx_5 + b1anx_6 + b1anx_7 +
+        b1anx_9 + b1anx_10 + b1anx_11 + b1anx_12
+        b_facilitat =~ facilitat_1 + facilitat_2 + facilitat_3 + facilitat_4
+        
+        # direct effect
+        b_useful ~ bc2*b_anx + bc3*b_facilitat + b1age + b1gender + b1media + si*b_socinf
+        b_ease ~  ba2*b_anx + ba3*b_facilitat + b1age + b1gender + b1media + si*b_socinf
+        
+        b_ease ~~ 0*b_socinf
+        
+        # mediator
+        b_useful ~ bb*b_ease
+        
+        # indirect effect (a*b)
+        ba2bb := ba2*bb
+        ba2wb := ba2*wb
+        
+        ba3bb := ba3*bb
+        ba3wb := ba3*wb
+        
+        # total effect
+        b2total := bc2 + (ba2*bb)
+        w2total := bc2 + (ba2*wb)
+        
+        b3total := bc3 + (ba3*bb)
+        w3total := bc3 + (ba3*wb)
+    '
+      
+fit_si_dir <- sem(model = model_si_dir, data = longer, cluster = "id")
+summary(fit_si_dir, std=T, fit.measures = TRUE)
+    
+```
+
+```{r}
+anova(fit_si_dir, fit_si_indir)
+```
+
+
+## H1: Cognitive, affective, and contextual factors are related to the time students spend using NLP chatbots on average. Specifcially, there is a) a positive relationship of experience with NLP chatbots, b) a negative relationship of NLP chatbot anxiety, and c) a positive relationship of social influence with the time students spend using NLP chatbots. 
+
+```{r}
+model <- '
+        level: 1
+        w_timespent =~ timespent 
+        timespent~~0*timespent
+               
+        level: 2
+        b_timespent =~ timespent 
+        timespent~~0*timespent
+        
+        b_experience =~ b1experience
+        b1experience~~0*b1experience
+        b_anx =~ b1anx_1 + b1anx_2 + b1anx_3 + b1anx_4 + b1anx_5 + b1anx_6 + b1anx_7 +
+        b1anx_9 + b1anx_10 + b1anx_11 + b1anx_12
+        b_socinf =~ socinf_1 + socinf_2 + socinf_3 + socinf_4
+
+        # direct effect
+        b_timespent ~ b_experience + b_anx +b_socinf + b1age + b1gender + b1media
+    '
+      
+fit <- sem(model = model, data = longer, cluster = "id")
+summary(fit, std=T)
+```
+
+
+## H1: The relationship between daily perceived ease of use and the daily time spent using NLP chatbots is mediated through daily perceived usefulness of NLP chatbots
+
+
+```{r}
+model <- '
+        level: 1
+        w_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        w_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6
+        w_timespent =~ timespent 
+        timespent~~0*timespent
+        
+        # direct effect
+        w_timespent ~ wc*w_ease + gender_binary + b1age + b1media
+        
+        # mediator
+        w_useful ~ wa*w_ease
+        w_timespent ~ wb*w_useful
+               
+        level: 2
+        b_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        b_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6
+        b_timespent =~ timespent 
+        timespent~~0*timespent
+        
+        # direct effect
+        b_timespent ~ bc*b_ease + gender_binary + b1age + b1media
+        
+        # mediator
+        b_useful ~ ba*b_ease
+        b_timespent ~ bb*b_useful
+        
+        # indirect effect (a*b)
+        babb := ba*bb
+        wawb := wa*wb
+        
+        # total effect
+        btotal := bc + (ba*bb)
+        wtotal := wc + (wa*wb)
+    '
+      
+fit <- sem(model = model, data = longer, cluster = "id")
+summary(fit, std=T)
+    
+```
+
+
+
+## H1: There is a positive relationship of a) daily perceived usefulness and b) daily perceived ease of use with the usage of generative AI on the next day 
+
+
+```{r}
+#| eval: false
+library(brms)
+
+bprior <- c(prior_string("student_t(3,0,1)", class = "b"))
+
+model_formula <- bf(tooluse_numahead ~ set + useful.CWC + useful.pmean + ease.CWC + ease.pmean +
+                      b1anx.CGM + b1media.CGM + 
+                      b1extraversion.CGM + b1agreeableness.CGM + 
+                      b1conscientiousness.CGM + b1neuroticism.CGM + b1openness.CGM + 
+                      b1age.CGM + b1gender_binary + (1 + useful.CWC|id)) 
+
+fit_tooluse <- 
+    brm(model_formula,
+        data = longer_comp_nona, 
+        silent = 0,
+        family = bernoulli(link = "logit"),
+        chains = 4,
+        prior = bprior,
+        control = list(adapt_delta = 0.999))
+
+
+summary(fit_tooluse)
+```
+
+```{r}
+library(lme4)
+
+longer_comp_nona <- longer_comp_nona %>% mutate(tooluse_numahead = case_when(
+  tooluse_numahead == 1 ~ 0,
+  tooluse_numahead == 2 ~ 1))
+                                                
+# Define the model formula
+model_formula <- tooluse_numahead ~ set + useful.CWC + useful.pmean + ease.CWC + ease.pmean +
+                 b1anx.CGM + b1media.CGM + 
+                 b1extraversion.CGM + b1agreeableness.CGM + 
+                 b1conscientiousness.CGM + b1neuroticism.CGM + b1openness.CGM + 
+                 b1age.CGM + b1gender_binary + (1 | id)
+
+# Fit the model using glmer from lme4
+fit_tooluse <- glmer(model_formula, 
+                     data = longer_comp_nona, 
+                     family = binomial(link = "logit"), 
+                     control = glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 100000)))
+
+# Display the summary of the fitted model
+summary(fit_tooluse)
+
+
+longer_comp_nona %>% dplyr::filter(tooluse_numahead == 1)
+```
+
+## H2: There is a positive relationship of a) daily perceived usefulness and b) daily perceived ease of use with the time spent using generative AI on the same day. 
+
+
+```{r}
+longer %>% select(lead.timespent, id, used, timespent)
+```
+
+```{r}
+library(lme4)
+
+# Define the model formula
+model_formula <- timespent ~ set + 
+  useful.CWC + useful.pmean + ease.CWC + ease.pmean +
+                 b1anx.CGM + b1media.CGM + 
+                 b1extraversion.CGM + b1agreeableness.CGM + 
+                 b1conscientiousness.CGM + b1neuroticism.CGM + b1openness.CGM + 
+                 b1age.CGM + b1gender_binary + (1 | id)
+
+# Fit the model using lmer from lme4
+fit_timespent <- lmer(model_formula, 
+                      data = longer_comp_nona, 
+                      control = lmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 100000)))
+
+# Display the summary of the fitted model
+summary(fit_timespent)
+```
+
+
+```{r}
+library(lme4)
+
+longer_comp_nona_num <- dplyr::select_if(longer_comp_nona, is.numeric)
+
+# Prepare a vector of all potential moderator variables
+
+moderators <- grep("gmean", names(longer_comp_nona_num), invert = TRUE, value = TRUE)
+moderators <- grep("^id$", moderators, invert = TRUE, value = TRUE)
+moderators <- grep("^set$", moderators, invert = TRUE, value = TRUE)
+moderators <- grep("ease", moderators, invert = TRUE, value = TRUE)
+moderators <- grep("training", moderators, invert = TRUE, value = TRUE)
+moderators <- grep("strain", moderators, invert = TRUE, value = TRUE)
+moderators <- grep("^no", moderators, invert = TRUE, value = TRUE)
+
+moderators <- grep("CWC|CGM", moderators, invert = FALSE, value = TRUE)
+
+
+# Initialize an empty list to store significant moderator names
+significant_moderators <- list()
+
+# Define the static part of the formula
+
+base_formula <- "timespent ~ set + 
+  useful.CWC + useful.pmean + ease.CWC*X_MODERATOR_X + ease.pmean +
+                 b1anx.CGM + b1media.CGM + 
+                 b1extraversion.CGM + b1agreeableness.CGM + 
+                 b1conscientiousness.CGM + b1neuroticism.CGM + b1openness.CGM + 
+                 b1age.CGM + b1gender_binary + (1 | id)"
+
+# Loop through each potential moderator
+for (moderator in moderators) {
+  
+  # Replace placeholder with the current moderator
+  model_formula <- gsub("X_MODERATOR_X", moderator, base_formula)
+  
+  # Fit the model
+  fit_timespent <- lmer(as.formula(model_formula), 
+                     data = longer_comp_nona, 
+                     control = lmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 100000)))
+  
+  # Get the summary
+  fit_summary <- summary(fit_timespent)
+  
+  # Extract interaction term p-value
+  interaction_term <- grep("ease.CWC.*:", rownames(fit_summary$coefficients), value = TRUE)
+  if (length(interaction_term) > 0) {
+    interaction_p_value <- fit_summary$coefficients[interaction_term, "Pr(>|t|)"]
+
+    # Check if the interaction is significant
+    if (interaction_p_value < 0.05) {
+      significant_moderators[[moderator]] <- fit_summary$coefficients[interaction_term, ]
+    }
+  }
+}
+
+# Print the significant moderators and their coefficients
+significant_moderators
+```
+
+## H3: There is a positive relationship of a) daily perceived usefulness and b) daily perceived ease of use with the time spent using generative AI on the next day.
+
+```{r}
+library(lme4)
+
+# Define the model formula
+model_formula <- timespentahead ~ set + 
+  useful.CWC + useful.pmean + ease.CWC + ease.pmean +
+                 b1anx.CGM + b1media.CGM + 
+                 b1extraversion.CGM + b1agreeableness.CGM + 
+                 b1conscientiousness.CGM + b1neuroticism.CGM + b1openness.CGM + 
+                 b1age.CGM + b1gender_binary + (1| id)
+
+# Fit the model using lmer from lme4
+fit_timespentahead <- lmer(model_formula, 
+                      data = longer_comp_nona, 
+                      control = lmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 100000)))
+
+# Display the summary of the fitted model
+summary(fit_timespentahead)
+```
+
+```{r}
+#| eval: false
+library(brms)
+
+model_formula <- timespent ~ set + 
+  useful.CWC + useful.pmean + ease.CWC + ease.pmean +
+                 b1anx.CGM + b1media.CGM + 
+                 b1extraversion.CGM + b1agreeableness.CGM + 
+                 b1conscientiousness.CGM + b1neuroticism.CGM + b1openness.CGM + 
+                 b1age.CGM + b1gender_binary + (1| id)
+
+fit_timespentahead <- 
+    brm(model_formula,
+        data = longer_comp_nona, 
+        silent = 0,
+        chains = 4,
+        family = cratio(),
+        prior = set_prior("horseshoe(3)"),
+        control = list(adapt_delta = 0.999))
+
+
+summary(fit_timespentahead)
+```
+
+#### Posterior predictive checks 
+
+```{r}
+#| eval: false
+
+mcmc_plot(fit_timespentahead, variable = c('b_useful.CWC', 'b_ease.CWC'), type = 'combo')
+
+plot(fit_timespentahead, variable = "^b", regex = TRUE)
+
+# The first PPC we’ll look at is a comparison of the distribution of y and the distributions of some of the simulated datasets (rows) in the yrep matrix.
+pp_check(fit_timespentahead, ndraws = 200)
+
+# In the plot, the dark line is the distribution of the observed outcomes y and each of the lighter lines is the kernel density estimate of one of the replications of y from the posterior predictive distribution (i.e., one of the rows in yrep). 
+
+pp_check(fit_timespentahead, type = "error_hist", ndraws = 11)
+loo1b <- loo(fit_timespentahead, save_psis = TRUE)
+loo1b
+plot(loo1b) #The output mentions Pareto k estimates, which give an indication of how ‘influential’ each point is. The higher the value of k, the more influential the point. Values of k over 0.7 are not good, and suggest the need for model re-specification. 
+pp_check(fit_timespentahead, type = "stat_2d")
+#pp_check(fit_ease.pmean, type = "rootogram")
+```
+
+## H4: There are negative relationships of a) daily perceived usefulness and b) daily perceived ease of use with same-day strain from using generative AI
+
+```{r}
+library(lme4)
+
+# Define the model formula
+model_formula <- strain ~ set  + ease.CWC*b1receivetr.CGM + useful.CWC +
+                 ease.pmean + useful.pmean +
+                 b1anx.CGM + b1media.CGM + 
+                 b1extraversion.CGM + b1agreeableness.CGM + 
+                 b1conscientiousness.CGM + b1neuroticism.CGM + b1openness.CGM + 
+                 b1age.CGM + b1gender_binary + (1| id)
+
+model_formula <- ease ~ set + b1receivetr.CGM + useful.CWC +
+                  useful.pmean +
+                 b1anx.CGM + b1media.CGM + 
+                 b1extraversion.CGM + b1agreeableness.CGM + 
+                 b1conscientiousness.CGM + b1neuroticism.CGM + b1openness.CGM + 
+                 b1age.CGM + b1gender_binary + (1| id)
+
+# Fit the model using lmer from lme4
+fit_strain <- lmer(model_formula, 
+                   data = longer_comp_nona, 
+                   control = lmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 100000)))
+
+# Display the summary of the fitted model
+summary(fit_strain)
+
+
+library(interactions)
+interact_plot(model = fit_strain, pred = ease.CWC, modx = b1receivetr.CGM)
+```
+
+```{r}
+library(lme4)
+
+longer_comp_nona_num <- dplyr::select_if(longer_comp_nona, is.numeric)
+
+# Prepare a vector of all potential moderator variables
+
+moderators <- grep("gmean", names(longer_comp_nona_num), invert = TRUE, value = TRUE)
+moderators <- grep("^id$", moderators, invert = TRUE, value = TRUE)
+moderators <- grep("^set$", moderators, invert = TRUE, value = TRUE)
+moderators <- grep("ease", moderators, invert = TRUE, value = TRUE)
+moderators <- grep("training", moderators, invert = TRUE, value = TRUE)
+moderators <- grep("strain", moderators, invert = TRUE, value = TRUE)
+moderators <- grep("^no", moderators, invert = TRUE, value = TRUE)
+
+moderators <- grep("CWC|CGM", moderators, invert = FALSE, value = TRUE)
+
+
+# Initialize an empty list to store significant moderator names
+significant_moderators <- list()
+
+# Define the static part of the formula
+base_formula <- "strain ~ set + ease.CWC*X_MODERATOR_X + useful.CWC +
+                 ease.pmean + useful.pmean +
+                 b1anx.CGM + b1media.CGM + 
+                 b1extraversion.CGM + b1agreeableness.CGM + 
+                 b1conscientiousness.CGM + b1neuroticism.CGM + b1openness.CGM + 
+                 b1age.CGM + b1gender_binary + (1| id)"
+
+# Loop through each potential moderator
+for (moderator in moderators) {
+  
+  # Replace placeholder with the current moderator
+  model_formula <- gsub("X_MODERATOR_X", moderator, base_formula)
+  
+  # Fit the model
+  fit_strain <- lmer(as.formula(model_formula), 
+                     data = longer_comp_nona, 
+                     control = lmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 100000)))
+  
+  # Get the summary
+  fit_summary <- summary(fit_strain)
+  
+  # Extract interaction term p-value
+  interaction_term <- grep("ease.CWC.*:", rownames(fit_summary$coefficients), value = TRUE)
+  if (length(interaction_term) > 0) {
+    interaction_p_value <- fit_summary$coefficients[interaction_term, "Pr(>|t|)"]
+
+    # Check if the interaction is significant
+    if (interaction_p_value < 0.05) {
+      significant_moderators[[moderator]] <- fit_summary$coefficients[interaction_term, ]
+    }
+  }
+}
+
+# Print the significant moderators and their coefficients
+significant_moderators
+```
+
+```{r}
+library(lme4)
+
+longer_comp_nona_num <- dplyr::select_if(longer_comp_nona, is.numeric)
+
+# Prepare a vector of all potential moderator variables
+
+predictors <- grep("gmean", names(longer_comp_nona_num), invert = TRUE, value = TRUE)
+predictors <- grep("^id$", predictors, invert = TRUE, value = TRUE)
+predictors <- grep("^set$", predictors, invert = TRUE, value = TRUE)
+predictors <- grep("ease", predictors, invert = TRUE, value = TRUE)
+predictors <- grep("training", predictors, invert = TRUE, value = TRUE)
+predictors <- grep("strain", predictors, invert = TRUE, value = TRUE)
+predictors <- grep("^no", predictors, invert = TRUE, value = TRUE)
+
+predictors <- grep("CWC|CGM", predictors, invert = FALSE, value = TRUE)
+
+
+# Initialize an empty list to store significant moderator names
+significant_predictors <- list()
+
+# Define the static part of the formula
+base_formula <- "ease ~ set + X_MODERATOR_X + useful.CWC +
+                 useful.pmean +
+                 b1anx.CGM + b1media.CGM + 
+                 b1extraversion.CGM + b1agreeableness.CGM + 
+                 b1conscientiousness.CGM + b1neuroticism.CGM + b1openness.CGM + 
+                 b1age.CGM + b1gender_binary + (1| id)"
+
+# Loop through each potential moderator
+for (predictor in predictors) {
+  
+  # Replace placeholder with the current moderator
+  model_formula <- gsub("X_MODERATOR_X", predictor, base_formula)
+  
+  # Fit the model
+  fit_strain <- lmer(as.formula(model_formula), 
+                     data = longer_comp_nona, 
+                     control = lmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 100000)))
+  
+  # Get the summary
+  fit_summary <- summary(fit_strain)
+  
+  # Extract interaction term p-value
+  interaction_term <- grep("ease.CWC.*:", rownames(fit_summary$coefficients), value = TRUE)
+  if (length(interaction_term) > 0) {
+    interaction_p_value <- fit_summary$coefficients[interaction_term, "Pr(>|t|)"]
+
+    # Check if the interaction is significant
+    if (interaction_p_value < 0.05) {
+      significant_moderators[[moderator]] <- fit_summary$coefficients[interaction_term, ]
+    }
+  }
+}
+
+# Print the significant moderators and their coefficients
+significant_predictors
+```
+
+
+
+```{r}
+#| eval: false
+
+library(brms)
+
+bform <- bf(strain ~ set + ease.CWC + useful.CWC +
+              ease.pmean + useful.pmean +
+              b1anx.CGM + b1media.CGM + 
+              b1extraversion.CGM + b1agreeableness.CGM + 
+              b1conscientiousness.CGM + b1neuroticism.CGM + b1openness.CGM + 
+              b1age.CGM + b1gender_binary + (1|id)) 
+
+fit_strain <- 
+    brm(bform,
+        data = longer_comp_nona, 
+        prior = bprior,
+        silent = 0,
+        chains = 4,
+        control = list(adapt_delta = 0.999))
+
+summary(fit_strain)
+```
+
+#### Posterior predictive checks 
+
+```{r}
+#| eval: false
+
+plot(fit_strain, variable = "^b", regex = TRUE)
+
+# The first PPC we’ll look at is a comparison of the distribution of y and the distributions of some of the simulated datasets (rows) in the yrep matrix.
+pp_check(fit_strain, ndraws = 200)
+
+# In the plot, the dark line is the distribution of the observed outcomes y and each of the lighter lines is the kernel density estimate of one of the replications of y from the posterior predictive distribution (i.e., one of the rows in yrep). 
+
+pp_check(fit_strain, type = "error_hist", ndraws = 11)
+loo1b <- loo(fit_strain, save_psis = TRUE)
+loo1b
+plot(loo1b) #The output mentions Pareto k estimates, which give an indication of how ‘influential’ each point is. The higher the value of k, the more influential the point. Values of k over 0.7 are not good, and suggest the need for model re-specification. 
+pp_check(fit_strain, type = "stat_2d")
+#pp_check(fit_ease.pmean, type = "rootogram")
+```
+
+
+## H5: There are negative relationships of a) daily perceived usefulness and b) daily perceived ease of use with next-day strain from using generative AI
+
+```{r}
+library(lme4)
+
+# Define the model formula
+model_formula <- strainahead ~ set + ease.CWC + useful.CWC +
+                 ease.pmean + useful.pmean +
+                 b1anx.CGM + b1media.CGM + 
+                 b1extraversion.CGM + b1agreeableness.CGM + 
+                 b1conscientiousness.CGM + b1neuroticism.CGM + b1openness.CGM + 
+                 b1age.CGM + b1gender_binary + (1| id)
+
+# Fit the model using lmer from lme4
+fit_strainahead <- lmer(model_formula, 
+                   data = longer_comp_nona, 
+                   control = lmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 100000)))
+
+# Display the summary of the fitted model
+summary(fit_strainahead)
+
+library(interactions)
+interact_plot(model = fit_strainahead, pred = ease.CWC, modx = b1receivetr.CGM)
+```
+
+
+```{r}
+bform <- bf(strainahead ~  set + ease.CWC + useful.CWC +
+              ease.pmean + useful.pmean +
+              b1anx.CGM + b1media.CGM + 
+              b1extraversion.CGM + b1agreeableness.CGM + 
+              b1conscientiousness.CGM + b1neuroticism.CGM + b1openness.CGM + 
+              b1age.CGM + b1gender_binary + (1|id)) 
+
+fit_strainahead <- 
+    brm(bform,
+        data = longer_comp_nona, 
+        prior = bprior,
+        silent = 0,
+        chains = 4,
+        control = list(adapt_delta = 0.999))
+
+summary(fit_strainahead)
+get_prior(fit_strainahead)
+```
+
+
+#### Posterior predictive checks 
+
+```{r}
+#| eval: false
+
+plot(fit_strainahead, variable = "^b", regex = TRUE)
+
+# The first PPC we’ll look at is a comparison of the distribution of y and the distributions of some of the simulated datasets (rows) in the yrep matrix.
+pp_check(fit_strainahead, ndraws = 200)
+
+# In the plot, the dark line is the distribution of the observed outcomes y and each of the lighter lines is the kernel density estimate of one of the replications of y from the posterior predictive distribution (i.e., one of the rows in yrep). 
+
+pp_check(fit_strainahead, type = "error_hist", ndraws = 11)
+loo1b <- loo(fit_strainahead, save_psis = TRUE)
+loo1b
+plot(loo1b) #The output mentions Pareto k estimates, which give an indication of how ‘influential’ each point is. The higher the value of k, the more influential the point. Values of k over 0.7 are not good, and suggest the need for model re-specification. 
+pp_check(fit_strainahead, type = "stat_2d")
+#pp_check(fit_ease.pmean, type = "rootogram")
+```
+
+## H6: There is a negative relationship of a) mean perceived usefulness and b) mean perceived ease of use measured over six days with strain from using generative AI measured one week later.
+
+```{r}
+model_formula <- bf(t7strain ~ ease.pmean + useful.pmean +
+                      b1experience.CGM +
+                      b1anx.CGM + b1media.CGM + 
+                      b1extraversion.CGM + b1agreeableness.CGM + 
+                      b1conscientiousness.CGM + b1neuroticism.CGM + b1openness.CGM + 
+                      b1age.CGM + b1gender_binary) 
+
+fit_t7strain.pmean <- 
+    brm(model_formula,
+        data = longer_comp_short_nona, 
+        silent = 0,
+        #family = bernoulli(link = "logit"),
+        chains = 4,
+        prior = bprior,
+        control = list(adapt_delta = 0.999))
+
+summary(fit_t7strain.pmean)
+```
+
+## H7: There is a negative relationship of AI anxiety with a) mean perceived usefulness b) mean perceived ease of use and c) mean strain averaged over multiple days. 
+
+```{r}
+#| eval: false
+library(brms)
+
+
+model_formula <- bf(useful.pmean ~ set + b1experience.CGM +
+                      b1anx.CGM + b1media.CGM + 
+                      b1extraversion.CGM + b1agreeableness.CGM + 
+                      b1conscientiousness.CGM + b1neuroticism.CGM + b1openness.CGM + 
+                      b1age.CGM + b1gender_binary) 
+
+fit_useful <- 
+    brm(model_formula,
+        data = longer_comp_short_nona, 
+        silent = 0,
+        #family = bernoulli(link = "logit"),
+        chains = 4,
+        prior = bprior,
+        control = list(adapt_delta = 0.999))
+
+
+summary(fit_useful)
+
+
+model_formula <- bf(ease.CWC ~ b1experience.CGM +
+                      b1anx.CGM + b1media.CGM + 
+                      b1extraversion.CGM + b1agreeableness.CGM + 
+                      b1conscientiousness.CGM + b1neuroticism.CGM + b1openness.CGM + 
+                      b1age.CGM + b1gender_binary + (|id))  
+
+
+fit_ease <- 
+    brm(model_formula,
+        data = longer_comp_short_nona, 
+        silent = 0,
+        #family = bernoulli(link = "logit"),
+        chains = 4,
+        prior = bprior,
+        control = list(adapt_delta = 0.999))
+
+summary(fit_ease)
+
+
+model_formula <- bf(strain.pmean ~ b1experience.CGM +
+                      b1anx.CGM + b1media.CGM + 
+                      b1extraversion.CGM + b1agreeableness.CGM + 
+                      b1conscientiousness.CGM + b1neuroticism.CGM + b1openness.CGM + 
+                      b1age.CGM + b1gender_binary + (1|id))  
+
+
+fit_strain <- 
+    brm(model_formula,
+        data = longer_comp_short_nona, 
+        silent = 0,
+        #family = bernoulli(link = "logit"),
+        chains = 4,
+        prior = bprior,
+        control = list(adapt_delta = 0.999))
+
+summary(fit_strain)
+```
+
+## H8: The negative relationship of T1 AI anxiety with lagged strain from using AI chatbots is mediated through mean ease of use measured over multiple days.
+
+```{r}
+library(brms)
+
+strain_mod <- bf(t7strain ~ ease.pmean + useful.pmean +
+                      b1experience.CGM +
+                      b1anx.CGM + b1media.CGM + 
+                      b1extraversion.CGM + b1agreeableness.CGM + 
+                      b1conscientiousness.CGM + b1neuroticism.CGM + b1openness.CGM + 
+                      b1age.CGM + b1gender_binary) 
+
+
+ease_mod <- bf(ease.pmean ~ b1experience.CGM +
+                      b1anx.CGM + b1media.CGM + 
+                      b1extraversion.CGM + b1agreeableness.CGM + 
+                      b1conscientiousness.CGM + b1neuroticism.CGM + b1openness.CGM + 
+                      b1age.CGM + b1gender_binary) 
+
+
+fit_brm <- 
+    brm(strain_mod + ease_mod + set_rescor(FALSE),
+        data = longer_comp_short_nona, 
+        silent = 0,
+        #family = bernoulli(link = "logit"),
+        chains = 4,
+        prior = bprior,
+        control = list(adapt_delta = 0.999))
+
+summary(fit_brm)
+## use the posterior_samples() function to pull out the posterior distributions for all model parameters
+## these are all possible effect sizes for each parameter
+med_post <- posterior_samples(fit_brm)
+
+indirect_effect_ease <- 
+  med_post$b_easepmean_b1anx.CGM *   # a path
+   med_post$b_t7strain_ease.pmean    # b path
+
+round(quantile(indirect_effect_ease, probs = c(.025, .5, .975)), digits = 3) 
+
+```
+
+
+## H8: The negative relationship of T1 AI anxiety with daily strain from using AI chatbots is mediated through daily ease of use.
+
+
+```{r}
+library(dplyr)
+
+longer <- semTools::indProd(longer, var1=33:38, var2=105, match = FALSE, meanC = TRUE, residualC = FALSE, doubleMC = TRUE, namesProd = NULL)
+
+
+model <- '
+        level: 1
+        w_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        w_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6
+        w_timespent =~ timespent 
+        timespent~~0*timespent
+        w_intusefulgender =~ useful_1.gender_binary + useful_2.gender_binary + useful_3.gender_binary + useful_4.gender_binary + useful_5.gender_binary + useful_6.gender_binary
+        
+        w_useful ~ wb1*w_ease
+        w_timespent ~ w_useful + wb2*w_intusefulgender
+               
+        level: 2
+        b_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        b_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6       
+        b_timespent =~ timespent 
+        timespent~~0*timespent
+        b_media =~ b1media 
+        b1media~~0*b1media
+        b_intusefulgender =~ useful_1.gender_binary + useful_2.gender_binary + useful_3.gender_binary + useful_4.gender_binary + useful_5.gender_binary + useful_6.gender_binary
+        
+              # direct effect
+                 b_timespent ~ bc*b_media
+                 b_timespent ~ b_useful + bb2*b_intusefulgender
+               # mediators
+                 b_ease ~ ba1*b_media
+                 b_useful ~ bb1*b_ease
+               # indirect effect (a*b)
+                 babb := ba1*bb1*bb2
+                 bawb := ba1*wb1*wb2
+               # total effect
+                 btotal := bc + (ba1*bb1*bb2)
+                 wtotal := bc + (ba1*wb1*wb2)
+    '
+      
+    fit <- sem(model = model, data = longer, cluster = "id")
+    summary(fit, std=T, fit.measures = TRUE )
+
+```
+
+
+
+```{r}
+library(dplyr)
+
+model <- '
+        level: 1
+        w_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        w_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6
+        w_reliable =~ reliable_1 + reliable_2 + reliable_3
+        w_timespent =~ timespent 
+        timespent~~0*timespent
+        
+        w_ease ~ wa*w_reliable
+        w_useful ~ wb1*w_ease
+        w_timespent ~ wb2*w_useful
+        w_timespent ~ wc*w_reliable
+               
+        level: 2
+        b_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        b_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6       
+        b_timespent =~ timespent 
+        timespent~~0*timespent
+        b_reliable =~ reliable_1 + reliable_2 + reliable_3
+        
+              # direct effect
+                 b_timespent ~ bc*b_reliable
+                 b_timespent ~ bb2*b_useful
+               # mediators
+                 b_ease ~ ba*b_reliable
+                 b_useful ~ bb1*b_ease
+               # indirect effect (a*b)
+                 babb := ba*bb1*bb2
+                 wawb := wa*wb1*wb2
+               # total effect
+                 btotal := bc + (ba*bb1*bb2)
+                 wtotal := bc + (wa*wb1*wb2)
+    '
+      
+    fit <- sem(model = model, data = longer, cluster = "id")
+    summary(fit, std=T, fit.measures = TRUE )
+
+```
+
+```{r}
+library(dplyr)
+
+longer <- fastDummies::dummy_cols(longer, select_columns = "b1receivetr")
+longer <- fastDummies::dummy_cols(longer, select_columns = "training_none")
+
+
+model <- '
+        level: 1
+        w_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        w_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6
+        w_timespent =~ timespent 
+        timespent~~0*timespent
+        
+        w_useful ~ wb1*w_ease
+        w_timespent ~ wb2*w_useful
+               
+        level: 2
+        b_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        b_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6       
+        b_timespent =~ timespent 
+        timespent~~0*timespent
+        b_receivetr =~ training_none_0 
+        training_none_0~~0*training_none_0
+        
+              # direct effect
+                 b_timespent ~ bc*b_receivetr
+                 b_timespent ~ bb2*b_useful
+               # mediators
+                 b_ease ~ ba1*b_receivetr
+                 b_useful ~ bb1*b_ease
+               # indirect effect (a*b)
+                 babb := ba1*bb1*bb2
+                 bawb := ba1*wb1*wb2
+               # total effect
+                 btotal := bc + (ba1*bb1*bb2)
+                 wtotal := bc + (ba1*wb1*wb2)
+    '
+      
+    fit <- sem(model = model, data = longer, cluster = "id")
+    summary(fit, std=T, fit.measures = TRUE )
+
+```
+
+```{r}
+model <- '
+        level: 1
+        w_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        w_strain =~ strain_1 + strain_2 + strain_3 + strain_4
+            # direct effect
+                 #strain ~ c*b1anx
+               # mediator
+                 #ease ~ a*b1anx
+                 w_strain ~ wb*w_ease
+               
+        level: 2
+        b_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        b_strain =~ strain_1 + strain_2 + strain_3 + strain_4
+        b_anx =~ b1anx_1 + b1anx_2 + b1anx_3 + b1anx_4 + b1anx_5 + b1anx_6 + b1anx_7 + b1anx_9 + b1anx_10 + b1anx_11 + b1anx_12
+              # direct effect
+                 b_strain ~ bc*b_anx
+               # mediator
+                 b_ease ~ ba*b_anx
+                 b_strain ~ bb*b_ease
+               # indirect effect (a*b)
+                 babb := ba*bb
+                 bawb := ba*wb
+               # total effect
+                 btotal := bc + (ba*bb)
+                 wtotal := bc + (ba*wb)
+    '
+      
+    fit <- sem(model = model, data = longer, cluster = "id")
+    summary(fit, std=T)
+    
+```
+
+```{r}
+library(dplyr)
+
+model <- '
+        level: 1
+        w_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        w_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6
+        w_timespent =~ timespent 
+        timespent~~0*timespent
+        
+        w_useful ~ wb1*w_ease
+        w_timespent ~ wb2*w_useful
+               
+        level: 2
+        b_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        b_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6       
+        b_timespent =~ timespent 
+        timespent~~0*timespent
+        b_anx =~ b1anx_1 + b1anx_2 + b1anx_3 + b1anx_4 + b1anx_5 + b1anx_6 + b1anx_7 + b1anx_9 + b1anx_10 + b1anx_11 + b1anx_12 
+        
+              # direct effect
+                 b_timespent ~ bc*b_anx
+                 b_timespent ~ bb2*b_useful
+               # mediators
+                 b_ease ~ ba1*b_anx
+                 b_useful ~ bb1*b_ease
+               # indirect effect (a*b)
+                 babb := ba1*bb1*bb2
+                 bawb := ba1*wb1*wb2
+               # total effect
+                 btotal := bc + (ba1*bb1*bb2)
+                 wtotal := bc + (ba1*wb1*wb2)
+    '
+      
+    fit <- sem(model = model, data = longer, cluster = "id")
+    summary(fit, std=T, fit.measures = TRUE )
+
+```
+
+
+```{r}
+library(dplyr)
+
+model <- '
+        level: 1
+        w_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        w_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6
+        w_timespent =~ timespent 
+        timespent~~0*timespent
+        
+        w_useful ~ wb1*w_ease
+        w_timespent ~ wb2*w_useful
+               
+        level: 2
+        b_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        b_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6       
+        b_timespent =~ timespent 
+        timespent~~0*timespent
+        b_facil =~ facilitat_1 + facilitat_2 + facilitat_3 + facilitat_4
+        
+              # direct effect
+                 b_timespent ~ bc*b_facil
+                 b_timespent ~ bb2*b_useful
+               # mediators
+                 b_ease ~ ba1*b_facil
+                 b_useful ~ bb1*b_ease
+               # indirect effect (a*b)
+                 babb := ba1*bb1*bb2
+                 bawb := ba1*wb1*wb2
+               # total effect
+                 btotal := bc + (ba1*bb1*bb2)
+                 wtotal := bc + (ba1*wb1*wb2)
+    '
+      
+    fit <- sem(model = model, data = longer, cluster = "id")
+    summary(fit, std=T, fit.measures = TRUE )
+
+```
+
+```{r}
+library(dplyr)
+
+model <- '
+        level: 1
+        w_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        w_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6
+        w_timespent =~ timespent 
+        timespent~~0*timespent
+        
+        w_useful ~ wb1*w_ease
+        w_timespent ~ wb2*w_useful
+               
+        level: 2
+        b_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        b_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6       
+        b_timespent =~ timespent 
+        timespent~~0*timespent
+        b_socinf =~ socinf_1 + socinf_2 + socinf_3 + socinf_4
+        
+              # direct effect
+                 b_timespent ~ bc*b_socinf
+                 b_timespent ~ bb2*b_useful
+               # mediators
+                 b_ease ~ ba1*b_socinf
+                 b_useful ~ bb1*b_ease
+               # indirect effect (a*b)
+                 babb := ba1*bb1*bb2
+                 bawb := ba1*wb1*wb2
+               # total effect
+                 btotal := bc + (ba1*bb1*bb2)
+                 wtotal := bc + (ba1*wb1*wb2)
+    '
+      
+    fit <- sem(model = model, data = longer, cluster = "id")
+    summary(fit, std=T, fit.measures = TRUE )
+
+```
+
+```{r}
+library(dplyr)
+
+longer <- fastDummies::dummy_cols(longer, select_columns = "b1receivetr")
+
+
+model <- '
+        level: 1
+        w_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        w_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6
+        w_timespent =~ timespent 
+        timespent~~0*timespent
+        
+        w_useful ~ wb1*w_ease
+        w_timespent ~ wb2*w_useful
+               
+        level: 2
+        b_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        b_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6       
+        b_timespent =~ timespent 
+        timespent~~0*timespent
+        b_receivetr =~ b1receivetr_1 
+        b1receivetr_1~~0*b1receivetr_1
+        
+              # direct effect
+                 b_timespent ~ bc*b_receivetr
+                 b_timespent ~ bb2*b_useful
+               # mediators
+                 b_ease ~ ba1*b_receivetr
+                 b_useful ~ bb1*b_ease
+               # indirect effect (a*b)
+                 babb := ba1*bb1*bb2
+                 bawb := ba1*wb1*wb2
+               # total effect
+                 btotal := bc + (ba1*bb1*bb2)
+                 wtotal := bc + (ba1*wb1*wb2)
+    '
+      
+    fit <- sem(model = model, data = longer, cluster = "id")
+    summary(fit, std=T, fit.measures = TRUE )
+
+```
+
+
+```{r}
+library(dplyr)
+
+longer[,c("used")] <-
+    lapply(longer[,c("used")], ordered)
+
+model <- '
+        level: 1
+        w_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        w_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6
+        w_used =~ used
+        used~~0*used
+        
+        w_used ~ wb2*w_useful
+        w_useful ~ wb1*w_ease
+               
+        level: 2
+        b_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        b_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6       
+        b_used =~ used
+        used~~0*used
+        b_socinf =~ socinf_1 + socinf_2 + socinf_3 + socinf_4
+        
+              # direct effect
+                 b_used ~ bc*b_socinf
+                 b_used ~ bb2*b_useful
+               # mediators
+                 b_ease ~ ba1*b_socinf
+                 b_useful ~ bb1*b_ease
+               # indirect effect (a*b)
+                 babb := ba1*bb1*bb2
+                 bawb := ba1*wb1*wb2
+               # total effect
+                 btotal := bc + (ba1*bb1*bb2)
+                 wtotal := bc + (ba1*wb1*wb2)
+    '
+      
+    fit <- sem(model = model, data = longer, cluster = "id")
+    summary(fit, std=T, fit.measures = TRUE )
+
+```
+
+```{r}
+model <- '
+        level: 1
+        w_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        w_strain =~ strain_1 + strain_2 + strain_3 + strain_4
+            # direct effect
+                 #strain ~ c*b_exp
+               # mediator
+                 #ease ~ a*b_exp
+                 w_strain ~ wb*w_ease
+               
+        level: 2
+        b_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        b_strain =~ strain_1 + strain_2 + strain_3 + strain_4
+        b_exp =~ b1experience 
+        b1experience~~0*b1experience
+              # direct effect
+                 b_strain ~ bc*b_exp
+               # mediator
+                 b_ease ~ ba*b_exp
+                 b_strain ~ bb*b_ease
+               # indirect effect (a*b)
+                 babb := ba*bb
+                 bawb := ba*wb
+               # total effect
+                 btotal := bc + (ba*bb)
+                 wtotal := bc + (ba*wb)
+    '
+      
+    fit <- sem(model = model, data = longer, cluster = "id")
+    summary(fit, std=T)
+    
+```
+
+
+```{r}
+
+
+model <- '
+        level: 1
+        w_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        w_strain =~ strain_1 + strain_2 + strain_3 + strain_4
+            # direct effect
+                 #strain ~ c*b_exp
+               # mediator
+                 #ease ~ a*b_exp
+                 w_strain ~ wb*w_ease
+               
+        level: 2
+        b_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        b_strain =~ strain_1 + strain_2 + strain_3 + strain_4
+        b_exp =~ b1experience 
+        b1experience~~0*b1experience
+              # direct effect
+                 b_strain ~ bc*b_exp
+               # mediator
+                 b_ease ~ ba*b_exp
+                 b_strain ~ bb*b_ease
+               # indirect effect (a*b)
+                 babb := ba*bb
+                 bawb := ba*wb
+               # total effect
+                 btotal := bc + (ba*bb)
+                 wtotal := bc + (ba*wb)
+    '
+      
+    fit <- sem(model = model, data = longer, cluster = "id")
+    summary(fit, std=T)
+    
+```
+
+```{r}
+library(dplyr)
+
+
+model <- '
+        level: 1
+        w_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        w_useful =~ lead.useful_1 + lead.useful_2 + lead.useful_3 + lead.useful_4 + lead.useful_5 + lead.useful_6
+            
+        w_useful ~ wb*w_ease
+               
+        level: 2
+        b_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        b_useful =~ lead.useful_1 + lead.useful_2 + lead.useful_3 + lead.useful_4 + lead.useful_5 + lead.useful_6
+        b_train =~ b1receivetr 
+        b_facilitat =~ facilitat_1 + facilitat_2 + facilitat_3 + facilitat_4 
+              # direct effect
+                 b_useful ~ bc*b_facilitat
+               # mediator
+                 b_ease ~ ba*b_facilitat
+                 b_useful ~ bb*b_ease
+               # indirect effect (a*b)
+                 babb := ba*bb
+                 bawb := ba*wb
+               # total effect
+                 btotal := bc + (ba*bb)
+                 wtotal := bc + (ba*wb)
+    '
+      
+    fit <- sem(model = model, data = longer, cluster = "id")
+    summary(fit, std=T, fit.measures = TRUE )
+
+```
+
+```{r}
+library(dplyr)
+longer <- 
+    longer %>%
+    group_by(id) %>%
+    mutate(lead.timespent = dplyr::lead(timespent, n = 1, default = NA))
+
+model <- '
+        level: 1
+        w_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        w_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6
+            # direct effect
+                 #strain ~ c*b_exp
+               # mediator
+                 #ease ~ a*b_exp
+                 w_useful ~ wb*w_ease
+               
+        level: 2
+        b_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        b_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6
+        b_exp =~ b1experience 
+        b1experience~~0*b1experience
+              # direct effect
+                 b_useful ~ bc*b_exp
+               # mediator
+                 b_ease ~ ba*b_exp
+                 b_useful ~ bb*b_ease
+               # indirect effect (a*b)
+                 babb := ba*bb
+                 bawb := ba*wb
+               # total effect
+                 btotal := bc + (ba*bb)
+                 wtotal := bc + (ba*wb)
+    '
+      
+    fit <- sem(model = model, data = longer, cluster = "id")
+    summary(fit, std=T, fit.measures = TRUE )
+
+```
+
+```{r}
+library(dplyr)
+longer <- 
+    longer %>%
+    group_by(id) %>%
+    mutate(lead2.timespent = dplyr::lead(timespent, n = 2, default = NA))
+
+longer <- 
+    longer %>%
+    group_by(id) %>%
+    mutate(lead.useful_1 = dplyr::lead(useful_1, n = 1, default = NA),
+           lead.useful_2 = dplyr::lead(useful_2, n = 1, default = NA),
+           lead.useful_3 = dplyr::lead(useful_3, n = 1, default = NA),
+           lead.useful_4 = dplyr::lead(useful_4, n = 1, default = NA),
+           lead.useful_5 = dplyr::lead(useful_5, n = 1, default = NA),
+           lead.useful_6 = dplyr::lead(useful_6, n = 1, default = NA))
+
+model <- '
+        level: 1
+        w_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        w_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6
+        w_timespent =~ timespent 
+        timespent~~0*timespent
+
+                 w_useful ~ wb1*w_ease
+                 w_timespent ~ wb2*w_useful
+               
+        level: 2
+        b_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        b_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6       
+        b_timespent =~ timespent 
+        timespent~~0*timespent
+        b_exp =~ b1experience 
+        b1experience~~0*b1experience
+        
+              # direct effect
+                 b_timespent ~ bc*b_exp
+                 b_timespent ~ bb2*b_useful
+               # mediators
+                 b_ease ~ ba1*b_exp
+                 b_useful ~ bb1*b_ease
+               # indirect effect (a*b)
+                 babb := ba1*bb1*bb2
+                 bawb := ba1*wb1*wb2
+               # total effect
+                 btotal := bc + (ba1*bb1*bb2)
+                 wtotal := bc + (ba1*wb1*wb2)
+    '
+      
+    fit <- sem(model = model, data = longer, cluster = "id")
+    summary(fit, std=T, fit.measures = TRUE )
+
+```
+
+
+
+```{r}
+model <- '
+        level: 1
+        w_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        w_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6
+            # direct effect
+                 #strain ~ c*b_socinf
+               # mediator
+                 #ease ~ a*b_socinf
+                 w_useful ~ wb*w_ease
+               
+        level: 2
+        b_ease =~ ease_1 + ease_2 + ease_3 + ease_4 + ease_5 + ease_6
+        b_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6
+        b_socinf =~ socinf_1 + socinf_2 + socinf_3 + socinf_4 
+              # direct effect
+                 b_useful ~ bc*b_socinf
+               # mediator
+                 b_ease ~ ba*b_socinf
+                 b_useful ~ bb*b_ease
+               # indirect effect (a*b)
+                 babb := ba*bb
+                 bawb := ba*wb
+               # total effect
+                 btotal := bc + (ba*bb)
+                 wtotal := bc + (ba*wb)
+    '
+      
+    fit <- lavaan::sem(model = model, data = longer, cluster = "id")
+    summary(fit, std=T)
+    
+```
+
+
+
+
+
+
+```{r}
+model <- '
+        level: 1
+        w_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6
+        w_strain =~ strain_1 + strain_2 + strain_3 + strain_4
+            # direct effect
+                 #strain ~ c*b1anx
+               # mediator
+                 #useful ~ a*b1anx
+                 w_strain ~ wb*w_useful
+               
+        level: 2
+        b_useful =~ useful_1 + useful_2 + useful_3 + useful_4 + useful_5 + useful_6
+        b_strain =~ strain_1 + strain_2 + strain_3 + strain_4
+        b_anx =~ b1anx_1 + b1anx_2 + b1anx_3 + b1anx_4 + b1anx_5 + b1anx_6 + b1anx_7 + b1anx_9 + b1anx_10 + b1anx_11 + b1anx_12
+              # direct effect
+                 b_strain ~ bc*b_anx
+               # mediator
+                 b_useful ~ ba*b_anx
+                 b_strain ~ bb*b_useful
+               # indirect effect (a*b)
+                 babb := ba*bb
+                 bawb := ba*wb
+               # total effect
+                 btotal := bc + (ba*bb)
+                 wtotal := bc + (ba*wb)
+    '
+      
+    fit <- sem(model = model, data = longer, cluster = "id")
+    summary(fit, std=T)
+    
+
+```
+
+```{r}
+library(brms)
+
+strain_mod <- bf(strain.pmean ~ ease.CWC + ease.pmean + useful.CWC + useful.pmean +
+                      b1experience.CGM +
+                      b1anx.CGM + b1media.CGM + 
+                      b1extraversion.CGM + b1agreeableness.CGM + 
+                      b1conscientiousness.CGM + b1neuroticism.CGM + b1openness.CGM + 
+                      b1age.CGM + b1gender_binary) 
+
+
+ease_mod <- bf(ease.pmean ~ b1experience.CGM +
+                      b1anx.CGM + b1media.CGM + 
+                      b1extraversion.CGM + b1agreeableness.CGM + 
+                      b1conscientiousness.CGM + b1neuroticism.CGM + b1openness.CGM + 
+                      b1age.CGM + b1gender_binary)
+
+
+fit_brm <- 
+    brm(strain_mod + ease_mod + set_rescor(FALSE),
+        data = longer_comp_short_nona, 
+        silent = 0,
+        #family = bernoulli(link = "logit"),
+        chains = 4,
+        prior = bprior,
+        control = list(adapt_delta = 0.999))
+
+summary(fit_brm)
+## use the posterior_samples() function to pull out the posterior distributions for all model parameters
+## these are all possible effect sizes for each parameter
+med_post <- posterior_samples(fit_brm)
+
+indirect_effect_ease <- 
+  med_post$b_easepmean_b1age.CGM  *   # a path
+   med_post$b_strainpmean_ease.pmean     # b path
+
+round(quantile(indirect_effect_ease, probs = c(.025, .5, .975)), digits = 3) 
+
+```
+
+```{r}
+library(psych)
+library(ggplot2)
+library(reshape2)
+library(nlme)
+library(lme4)
+selected <- longer_comp %>% dplyr::select(matches("CWC|strain|ease")) %>% names(.)
+describe(longer_comp[,selected])
+
+selected <- longer_comp %>% dplyr::select(matches("CWC|^id$|anx|strain|ease")) %>% names(.)
+
+data1 <- longer_comp[,selected]
+
+data1$x <- data1$b1anx.CGM
+data1$m <- data1$ease.CWC 
+data1$y <- data1$strain
+
+id_vars <- data1 %>% dplyr::select(-m, -y) %>% names(.)
+
+# Melt the two outcome variables (outcome and mediator) into a single z variable using the melt() function in the reshape2 library.
+
+datalong <- melt(data=data1,
+               id.vars=id_vars,
+               na.rm=FALSE, variable.name="dv",
+               value.name="z")
+
+
+# Adding dummy variables that indicate row entry (and reordering).
+
+#adding the double indicators 
+datalong$dy <- ifelse(datalong$dv=="y", 1, 0)
+datalong$dm <- ifelse(datalong$dv=="m", 1, 0)
+datalong$dvnum <- ifelse(datalong$dv=="m", 1, 0)
+
+
+#lmer mediation model
+mediationmodel.lmer <- lmer(formula = z ~  
+                                0 + dm:b1anx.CGM + 
+                                dy + dy:b1anx.CGM + dy:ease.CWC + 
+                                (ease.CWC | id), 
+                  data=datalong) 
+#viewing and putting model summary into an object
+
+(medmodelsummary <- summary(mediationmodel.lmer))
+
+```
+
+
+
+```{r}
+library(mediation)
+detach("package:lmerTest", unload=TRUE)
+fit_mediator <- lmer(ease ~ b1experience.CGM +
+                     b1anx.CGM + b1media.CGM + 
+                     b1extraversion.CGM + b1agreeableness.CGM + 
+                     b1conscientiousness.CGM + b1neuroticism.CGM + b1openness.CGM + 
+                     b1age.CGM + b1gender_binary + (1 | id), 
+                     data = longer_comp_nona, 
+                     control = lmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 100000)))
+
+fit_outcome <- lmer(strain ~ ease.CWC + ease.pmean + useful.CWC + useful.pmean +
+                    b1experience.CGM +
+                    b1anx.CGM + b1media.CGM + 
+                    b1extraversion.CGM + b1agreeableness.CGM + 
+                    b1conscientiousness.CGM + b1neuroticism.CGM + b1openness.CGM + 
+                    b1age.CGM + b1gender_binary + (1 | id), 
+                    data = longer_comp_nona, 
+                    control = lmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 100000)))
+
+# Estimate the mediation effects using the mediate function from the mediation package
+# Here, we assume that `b1anx.CGM` is the treatment variable, `ease.CWC` is the mediator, and `strain` is the outcome
+
+# First, connect the mediator model
+mediate_model <- mediation::mediate(fit_mediator, fit_outcome, 
+                         treat = "b1anx.CGM", mediator = "ease.CWC",
+                         sims = 1000)  # Increase the number of simulations for more precise estimates
+
+# Summary of the mediation analysis
+summary(mediate_model)
+
+# Indirect effect
+indirect_effect <- mediate_model$d0  # Effect when mediator is controlled
+
+# Confidence intervals for the indirect effect
+ci <- quantile(indirect_effect, probs = c(0.025, 0.5, 0.975))
+round(ci, digits = 3)
+```
+
+```{r}
+library(brms)
+
+strain_mod <- bf(strain ~ ease.CWC + ease.pmean + useful.CWC + useful.pmean +
+                      b1experience.CGM +
+                      b1anx.CGM + b1media.CGM + 
+                      b1extraversion.CGM + b1agreeableness.CGM + 
+                      b1conscientiousness.CGM + b1neuroticism.CGM + b1openness.CGM + 
+                      b1age.CGM + b1gender_binary + (1|id)) 
+
+
+ease_mod <- bf(ease ~ b1experience.CGM +
+                      b1anx.CGM + b1media.CGM + 
+                      b1extraversion.CGM + b1agreeableness.CGM + 
+                      b1conscientiousness.CGM + b1neuroticism.CGM + b1openness.CGM + 
+                      b1age.CGM + b1gender_binary + (1|id)) 
+
+
+fit_brm <- 
+    brm(strain_mod + ease_mod + set_rescor(FALSE),
+        data = longer_comp_nona, 
+        silent = 0,
+        #family = bernoulli(link = "logit"),
+        chains = 4,
+        prior = bprior,
+        control = list(adapt_delta = 0.999))
+
+summary(fit_brm)
+## use the posterior_samples() function to pull out the posterior distributions for all model parameters
+## these are all possible effect sizes for each parameter
+med_post <- posterior_samples(fit_brm)
+
+indirect_effect_ease <- 
+  med_post$b_ease_b1anx.CGM *   # a path
+   med_post$b_strain_ease.CWC    # b path
+
+round(quantile(indirect_effect_ease, probs = c(.025, .5, .975)), digits = 3) 
+
+```
+
+
+### Exploratory analyses 
+
+#### EXPLOR: Openness to experience increases the negative relationships of a) daily perceived usefulness and b) daily perceived ease of use and c) decreases the positive relationship of daily technology overload with daily strain from using generative AI.  
+
+```{r}
+#| eval: false
+bform <- bf(strain ~ useful.cwc*b1openness + useful.cmc + ease.cmc + b1openness*ease.cwc + over.cmc + over.cwc*b1openness + b1anx + b1media  + b1openness + b1extraversion + b1agreeableness + b1conscientiousness + b1neuroticism + age + gender + (1|id)) 
+
+fit_strain_mod_open <- brm(bform, data = longer_comp_imp_complete,
+                  prior = c(set_prior("horseshoe(3)", class="b")),
+                  chains = 4,
+                  control = list(adapt_delta = 0.999))
+
+bform <- bf(strain ~ useful.cwc*b1extraversion + useful.cmc + ease.cmc + b1extraversion*ease.cwc + over.cmc + over.cwc*b1extraversion + b1anx + b1media  + b1openness + b1extraversion + b1agreeableness + b1conscientiousness + b1neuroticism + age + gender + (1|id)) 
+
+fit_strain_mod_extra <- brm(bform, data = longer_comp_imp_complete,
+                  prior = c(set_prior("horseshoe(3)", class="b")),
+                  chains = 4,
+                  control = list(adapt_delta = 0.999))
+
+
+bform <- bf(strain ~ useful.cwc*b1agreeableness + useful.cmc + ease.cmc + b1agreeableness*ease.cwc + over.cmc + over.cwc*b1agreeableness + b1anx + b1media  + b1openness + b1agreeableness + b1conscientiousness + b1neuroticism + age + gender + (1|id)) 
+
+fit_strain_mod_agree <- brm(bform, data = longer_comp_imp_complete,
+                  prior = c(set_prior("horseshoe(3)", class="b")),
+                  chains = 4,
+                  control = list(adapt_delta = 0.999))
+
+bform <- bf(strain ~ useful.cwc*b1conscientiousness + useful.cmc + ease.cmc + b1conscientiousness*ease.cwc + over.cmc + over.cwc*b1conscientiousness + b1anx + b1media  + b1openness + b1extraversion + b1agreeableness + b1conscientiousness + b1neuroticism + age + gender + (1|id)) 
+
+fit_strain_mod_cons <- brm(bform, data = longer_comp_imp_complete,
+                  prior = c(set_prior("horseshoe(3)", class="b")),
+                  chains = 4,
+                  control = list(adapt_delta = 0.999))
+
+bform <- bf(strain ~ useful.cwc*b1neuroticism + useful.cmc + ease.cmc + b1neuroticism*ease.cwc + over.cmc + over.cwc*b1neuroticism + b1anx + b1media  + b1openness + b1extraversion + b1agreeableness + b1conscientiousness + b1neuroticism + age + gender + (1|id)) 
+
+fit_strain_mod_neuro <- brm(bform, data = longer_comp_imp_complete,
+                  prior = c(set_prior("horseshoe(3)", class="b")),
+                  chains = 4,
+                  control = list(adapt_delta = 0.999))
+
+```
+
+```{r}
+#| eval: false
+summary(fit_strain_mod_open)
+summary(fit_strain_mod_extra)
+summary(fit_strain_mod_agree)
+summary(fit_strain_mod_cons)
+summary(fit_strain_mod_neuro)
+```
+
+#### Posterior predictive checks 
+
+```{r}
+#| eval: false
+mcmc_plot(fit_strain_mod, variable = c('b_b1anx', 'b_gender2', 'b_b1media'), type = 'combo')
+
+# The first PPC we’ll look at is a comparison of the distribution of y and the distributions of some of the simulated datasets (rows) in the yrep matrix.
+pp_check(fit_strain_mod, ndraws = 200)
+
+# In the plot, the dark line is the distribution of the observed outcomes y and each of the lighter lines is the kernel density estimate of one of the replications of y from the posterior predictive distribution (i.e., one of the rows in yrep). 
+
+pp_check(fit_strain_mod, type = "error_hist", ndraws = 11)
+loo1b <- loo(fit_strain_mod, save_psis = TRUE)
+loo1b
+plot(loo1b) #The output mentions Pareto k estimates, which give an indication of how ‘influential’ each point is. The higher the value of k, the more influential the point. Values of k over 0.7 are not good, and suggest the need for model re-specification. 
+pp_check(fit_strain_mod, type = "stat_2d")
+```
+
+
+*Follow up strain*
+- no effects of any variable and no moderation anx*tooluse (does not converge)
+
+*Training*
+
+- no rel of any variable with b1training_none
+
+- no effect of training on overload 
+
+*Personality* 
+
+- no effect of conscientiousness*over/ease/use > strain 
+
+*Experience*
+
+- effect of experience on over/ease/use 
+
+*Moderations*
+
+- AI anxiety no moderator 
+
+*Mediations* 
+
+- usefulness not mediating effect of experience on strain
+
+```{r}
+trainings <- longer_comp %>% select(matches("training")) %>% ungroup(.) %>% select(-id)
+longer_comp_imp_complete <- cbind(longer_comp_imp_complete, trainings)
+
+# TOTAL > USEFUL
+bform <- bf(useful ~ b1total_trainings + ease.cmc + ease.cwc + over.cmc + over.cwc + b1anx + b1media  + b1extraversion + b1agreeableness + b1conscientiousness + b1neuroticism + age + gender + (1|id)) # no effect of total training 
+
+# NONE > USEFUL
+bform <- bf(useful ~ b1training_none + ease.cmc + ease.cwc + over.cmc + over.cwc + b1anx + b1media  + b1extraversion + b1agreeableness + b1conscientiousness + b1neuroticism + age + gender + (1|id)) # no effect of no training
+
+# TOTAL > EASE
+bform <- bf(ease ~ b1total_trainings + useful.cmc + useful.cwc + over.cmc + over.cwc + b1anx + b1media  + b1extraversion + b1agreeableness + b1conscientiousness + b1neuroticism + age + gender + (1|id)) # no effect of total training 
+
+# NONE > EASE
+bform <- bf(ease ~ b1training_none + useful.cmc + useful.cwc + over.cmc + over.cwc + b1anx + b1media  + b1extraversion + b1agreeableness + b1conscientiousness + b1neuroticism + age + gender + (1|id)) # no effect of no training
+
+# TOTAL > OVER
+bform <- bf( over ~ b1total_trainings + useful.cmc + useful.cwc + ease.cmc + ease.cwc + b1anx + b1media  + b1extraversion + b1agreeableness + b1conscientiousness + b1neuroticism + age + gender + (1|id)) # no effect of total training 
+
+# NONE > OVER
+bform <- bf( over ~ b1training_none + useful.cmc + useful.cwc + ease.cmc + ease.cwc + b1anx + b1media  + b1extraversion + b1agreeableness + b1conscientiousness + b1neuroticism + age + gender + (1|id)) # no effect of no training
+
+
+#### specific trainings ###
+
+# SPEC > USEFUL
+bform <- bf(useful ~ b1training_experiment + b1training_doc + b1training_freetutor + b1training_instruct + b1training_unicourse + b1training_onlineforum + ease.cmc + ease.cwc + over.cmc + over.cwc + b1anx + b1media  + b1extraversion + b1agreeableness + b1conscientiousness + b1neuroticism + age + gender + (1|id))
+
+# SPEC > EASE
+bform <- bf(ease ~ b1training_experiment + b1training_doc + b1training_freetutor + b1training_instruct + b1training_unicourse + b1training_onlineforum + useful.cmc + useful.cwc + over.cmc + over.cwc + b1anx + b1media  + b1extraversion + b1agreeableness + b1conscientiousness + b1neuroticism + age + gender + (1|id))
+
+# SPEC > OVER
+bform <- bf(over ~ b1training_experiment + b1training_doc + b1training_freetutor + b1training_instruct + b1training_unicourse + b1training_onlineforum + ease.cmc + ease.cwc + useful.cmc + useful.cwc + b1anx + b1media  + b1extraversion + b1agreeableness + b1conscientiousness + b1neuroticism + age + gender + (1|id))
+```
+
+
+
+```{r}
+library(brms)
+strain_mod <- bf(strain.cwc ~ -1 + set + over.cwc + over.cmc + ease.cwc + ease.cmc + useful.cmc + useful.cwc + b1anx + b1media  + b1extraversion + b1agreeableness + b1conscientiousness + b1neuroticism + age + gender + (-1 + over.cwc + ease.cwc|id), family = "gaussian")
+
+over_mod <- bf(over.cwc ~ -1 + set + ease.cwc + ease.cmc + useful.cmc + useful.cwc + b1anx + b1media  + b1extraversion + b1agreeableness + b1conscientiousness + b1neuroticism + age + gender + (-1 + ease.cwc|id), family = "gaussian")
+
+
+fit_brm <- brm(strain_mod + over_mod + set_rescor(FALSE),
+               data = longer_comp_imp_complete,
+               # iter = [fill in number here to test],
+               seed = 111,
+               control = list(adapt_delta = .99),
+               prior = c(set_prior("horseshoe(3)", class="b"))
+               )
+
+cortocov <- function (r, var1, var2) {
+  cov=r*((var1*var2)^0.5)
+  return(cov)
+}
+
+## use the posterior_samples() function to pull out the posterior distributions for all model parameters
+## these are all possible effect sizes for each parameter
+med_post <- posterior_samples(fit_brm)
+
+
+# plug in SD and correlation corresponding to a and b paths for cortocov function
+
+med_post$covab_ease <- cortocov(
+  # vector of posterior samples corresponding to correlation of a and b paths
+  med_post$cor_id__straincwc_over.cwc__straincwc_ease.cwc,
+  # vector of posterior samples corresponding to SD of a path --> convert to variance
+  med_post$sd_id__overcwc_ease.cwc^2,
+  # vector of posterior samples corresponding to SD of b path --> convert to variance
+  med_post$sd_id__straincwc_over.cwc^2)
+
+round(mean(med_post$covab_ease), digits = 4) # rounds to .03
+
+indirect_effect_ease <- 
+  med_post$b_overcwc_ease.cwc *   # a path
+   med_post$b_straincwc_over.cwc +   # b path
+  med_post$covab  
+
+ 
+
+round(quantile(indirect_effect_ease, probs = c(.025, .5, .975)), digits = 3)
+```
+
+
+
+
+```{r}
+longer_comp_imp_complete_short <- longer_comp_imp_complete_short %>%
+  mutate(b1training_rec = 1-b1training_none)
+                                                                            
+
+bform <- bf( strain ~ b1training_rec + b1training_rec*useful + b1training_rec*ease + b1training_rec*over  + b1training_rec*b1media  + b1extraversion + b1agreeableness + b1conscientiousness + b1neuroticism + age + gender) 
+
+fit_strain_train <- brm(bform, data = longer_comp_imp_complete_short,
+                  prior = c(set_prior("horseshoe(3)", class="b")),
+                  chains = 4,
+                  #family = bernoulli(link = "logit"),
+                  iter = 2000,
+                  control = list(adapt_delta = 0.99))
+
+bform <- bf( strain ~ b1training_none + b1training_none*useful + b1training_none*ease + b1training_none*over  + b1training_none*b1media  + b1extraversion + b1agreeableness + b1conscientiousness + b1neuroticism + age + gender) 
+
+fit_strain_notrain <- brm(bform, data = longer_comp_imp_complete_short,
+                  prior = c(set_prior("horseshoe(3)", class="b")),
+                  chains = 4,
+                  #family = bernoulli(link = "logit"),
+                  iter = 2000,
+                  control = list(adapt_delta = 0.99))
+
+```
+
+
+
+```{r}
+bform <- bf(useful ~ b1total_trainings  + 
+              b1wishtr.y +ease.cmc + ease.cwc + over.cmc + over.cwc  + b1media  + b1extraversion + b1agreeableness + b1conscientiousness + b1neuroticism + age + gender + (1|id)) 
+
+fit_useful_train <- brm(bform, data = longer_comp_imp_compl,
+                  prior = c(set_prior("horseshoe(3)", class="b")),
+                  chains = 4,
+                  control = list(adapt_delta = 0.99))
+
+longer_comp_imp_compl %>% select(b1receivetr, b1training_none, b1total_trainings)
+```
+
+```{r}
+#| include: true
+summary(fit_useful_train)
+conditional_effects(fit_strain_modexp)
+```
+
+
+As part of exploratory analyses, we will investigate the role of familiarity with NLP chatbots and training experience on perceived usefulness and ease of use, the role of NLP usage on study goal achievement, and the role of openness to experience as a moderator of the relationship of usefulness and ease of use with daily usage. 
+
+#### Effect of total trainings
+
+- no effect on daily usefulness
+- no effect on total days used 
+- no effect on T1 Anxiety 
+
+```{r}
+bform <- bf(b1anx ~ b1total_trainings + b1media + b1experience + b1extraversion + b1agreeableness + b1conscientiousness + b1neuroticism + b1openness + b1age) 
+
+#get_prior(bform, data = longer_comp)
+
+bprior <- c(
+            #prior_string("student_t(3,0,0.39)", class = "b", coef="useful"), #range 1-7
+            prior_string("student_t(3,0,0.47)", class = "b", coef="b1total_trainings"), #range 0-5
+            prior_string("student_t(3,0,0.58)", class = "b", coef="b1media"), #range 1-5
+            prior_string("student_t(3,0,0.58)", class = "b", coef="b1experience"), #range 1-5
+            prior_string("student_t(3,0,0.58)", class = "b", coef="b1extraversion"), #range 1-5
+            prior_string("student_t(3,0,0.58)", class = "b", coef="b1agreeableness"),#range 1-5
+            prior_string("student_t(3,0,0.58)", class = "b", coef="b1conscientiousness"), #range 1-5
+            prior_string("student_t(3,0,0.58)", class = "b", coef="b1neuroticism"), #range 1-5
+            prior_string("student_t(3,0,0.58)", class = "b", coef="b1openness"), #range 1-5
+            prior_string("student_t(3,0,0.05)", class = "b", coef="b1age")) #range 16-61
+
+fit_totaltraining <- brm(bform,
+                 data = longer_comp_short, 
+                 prior = c(set_prior("horseshoe(3)", class="b")),
+                 silent = 0,
+                 #family = hurdle_poisson(),
+                 chains = 4,
+                 #family = cratio(),
+                 control = list(adapt_delta = 0.99))
+```
+
+
+```{r}
+#| include: true
+summary(fit_totaltraining)
+conditional_effects(fit_totaltraining)
+```
+
+#### Effect of training at all
+
+- no effect on T1 Anxiety 
+
+```{r}
+bform <- bf(b1wishtr ~ b1training_none + b1media + b1experience + b1extraversion + b1agreeableness + b1conscientiousness + b1neuroticism + b1openness + b1age) 
+
+
+#get_prior(bform, data = longer_comp)
+
+bprior <- c(
+            #prior_string("student_t(3,0,0.39)", class = "b", coef="useful"), #range 1-7
+            prior_string("student_t(3,0,2)", class = "b", coef="b1training_none"), #range 0-5
+            prior_string("student_t(3,0,0.58)", class = "b", coef="b1media"), #range 1-5
+            prior_string("student_t(3,0,0.58)", class = "b", coef="b1experience"), #range 1-5
+            prior_string("student_t(3,0,0.58)", class = "b", coef="b1extraversion"), #range 1-5
+            prior_string("student_t(3,0,0.58)", class = "b", coef="b1agreeableness"),#range 1-5
+            prior_string("student_t(3,0,0.58)", class = "b", coef="b1conscientiousness"), #range 1-5
+            prior_string("student_t(3,0,0.58)", class = "b", coef="b1neuroticism"), #range 1-5
+            prior_string("student_t(3,0,0.58)", class = "b", coef="b1openness"), #range 1-5
+            prior_string("student_t(3,0,0.05)", class = "b", coef="b1age")) #range 16-61
+
+fit_trainingatall <- brm(bform,
+                 data = longer_comp, 
+                 prior = c(set_prior("horseshoe(3)", class="b")),
+                 silent = 0,
+                 #family = hurdle_poisson(),
+                 chains = 4,
+                 #family = cratio(),
+                 control = list(adapt_delta = 0.99))
+```
+
+
+```{r}
+#| include: true
+summary(fit_trainingatall)
+conditional_effects(fit_trainingatall)
+```
+
+#### Effect of each single training on T1 Anxiety
+
+- no effect on overall usage days
+- no effect on goal progress 
+- no effect on usefulness
+
+```{r}
+bform <- bf(b1anx ~ b1training_doc + b1training_freetutor + b1training_experiment + b1training_onlineforum + b1training_unicourse + b1training_instruct + b1media + b1experience + b1extraversion + b1agreeableness + b1conscientiousness + b1neuroticism + b1openness + b1age) 
+
+#get_prior(bform, data = longer_comp)
+
+bprior <- c(
+            #prior_string("student_t(3,0,0.39)", class = "b", coef="useful"), #range 1-7
+            prior_string("student_t(3,0,1)", class = "b", coef="b1training_doc"),
+            prior_string("student_t(3,0,1)", class = "b", coef="b1training_freetutor"),
+            prior_string("student_t(3,0,1)", class = "b", coef="b1training_experiment"),
+            prior_string("student_t(3,0,1)", class = "b", coef="b1training_onlineforum"),
+            prior_string("student_t(3,0,1)", class = "b", coef="b1training_unicourse"),
+            prior_string("student_t(3,0,1)", class = "b", coef="b1training_instruct"),
+            #prior_string("student_t(3,0,0.39)", class = "b", coef="b1anx"), #range 1-7
+            prior_string("student_t(3,0,0.58)", class = "b", coef="b1media"), #range 1-5
+            prior_string("student_t(3,0,0.58)", class = "b", coef="b1experience"), #range 1-5
+            prior_string("student_t(3,0,0.58)", class = "b", coef="b1extraversion"), #range 1-5
+            prior_string("student_t(3,0,0.58)", class = "b", coef="b1agreeableness"),#range 1-5
+            prior_string("student_t(3,0,0.58)", class = "b", coef="b1conscientiousness"), #range 1-5
+            prior_string("student_t(3,0,0.58)", class = "b", coef="b1neuroticism"), #range 1-5
+            prior_string("student_t(3,0,0.58)", class = "b", coef="b1openness"), #range 1-5
+            prior_string("student_t(3,0,0.05)", class = "b", coef="b1age")) #range 16-61
+
+fit_singletraining <- brm(bform,
+                 data = longer_comp, 
+                 prior = bprior,
+                 silent = 0,
+                 #family = hurdle_poisson(),
+                 chains = 4,
+                 #family = cratio(),
+                 control = list(adapt_delta = 0.95))
+```
+
+
+```{r}
+#| include: true
+summary(fit_singletraining)
+conditional_effects(fit_totaltraining)
+```
+
+#### Posterior predictive checks 
+
+```{r}
+#| include: true
+mcmc_plot(fit_singletraining, variable = c('b_b1training_1', 'b_b1training_2', 'b_b1training_3'), type = 'combo')
+
+# The first PPC we’ll look at is a comparison of the distribution of y and the distributions of some of the simulated datasets (rows) in the yrep matrix.
+pp_check(fit_singletraining, ndraws = 50)
+
+# In the plot, the dark line is the distribution of the observed outcomes y and each of the lighter lines is the kernel density estimate of one of the replications of y from the posterior predictive distribution (i.e., one of the rows in yrep). 
+
+pp_check(fit_singletraining, type = "error_hist", ndraws = 11)
+loo1b <- loo(fit_singletraining, save_psis = TRUE)
+loo1b
+plot(loo1b) #The output mentions Pareto k estimates, which give an indication of how ‘influential’ each point is. The higher the value of k, the more influential the point. Values of k over 0.7 are not good, and suggest the need for model re-specification. 
+pp_check(fit_singletraining, type = "stat_2d")
+pp_check(fit_singletraining, type = "rootogram")
+
+```
+
+
+#### Effect of each single training on follow up Anxiety
+
+- no effect on overall usage days
+- no effect on goal progress 
+- no effect on usefulness
+
+```{r}
+bform <- bf(t7anx ~ b1training_doc + b1training_freetutor + b1training_experiment + b1training_onlineforum + b1training_unicourse + b1training_instruct + b1media + b1experience + b1extraversion + b1agreeableness + b1conscientiousness + b1neuroticism + b1openness + b1age) 
+
+
+#get_prior(bform, data = longer_comp)
+
+bprior <- c(
+            #prior_string("student_t(3,0,0.39)", class = "b", coef="useful"), #range 1-7
+            prior_string("student_t(3,0,1)", class = "b", coef="b1training_doc"),
+            prior_string("student_t(3,0,1)", class = "b", coef="b1training_freetutor"),
+            prior_string("student_t(3,0,1)", class = "b",  coef="b1training_experiment"),
+            prior_string("student_t(3,0,1)", class = "b", coef="b1training_onlineforum"),
+            prior_string("student_t(3,0,1)", class = "b", coef="b1training_unicourse"),
+            prior_string("student_t(3,0,1)", class = "b", coef="b1training_instruct"),
+            #prior_string("student_t(3,0,0.39)", class = "b", coef="b1anx"), #range 1-7
+            prior_string("student_t(3,0,0.58)", class = "b", coef="b1media"), #range 1-5
+            prior_string("student_t(3,0,0.58)", class = "b", coef="b1experience"), #range 1-5
+            prior_string("student_t(3,0,0.58)", class = "b", coef="b1extraversion"), #range 1-5
+            prior_string("student_t(3,0,0.58)", class = "b", coef="b1agreeableness"),#range 1-5
+            prior_string("student_t(3,0,0.58)", class = "b", coef="b1conscientiousness"), #range 1-5
+            prior_string("student_t(3,0,0.58)", class = "b", coef="b1neuroticism"), #range 1-5
+            prior_string("student_t(3,0,0.58)", class = "b", coef="b1openness"), #range 1-5
+            prior_string("student_t(3,0,0.05)", class = "b", coef="b1age")) #range 16-61
+
+fit_singletraining <- brm(bform,
+                 data = longer_comp, 
+                 prior = bprior,
+                 silent = 0,
+                 #family = hurdle_poisson(),
+                 chains = 4,
+                 #family = cratio(),
+                 control = list(adapt_delta = 0.95))
+```
+
+
+```{r}
+#| include: true
+summary(fit_singletraining)
+conditional_effects(fit_totaltraining)
+```
+
+
+
+# Experimentation
+
+## Plotting some growth curve
+
+```{r}
+#| eval: false
+b1 = 0.9 # max value
+b2 = 0.9 # shape 
+b3 = 0.9 # curvature
+
+
+curve(   b1 * (1 - exp(-(x / b2) ^ b3)), from=1, to=10, n=300, xlab="xvalue", ylab="yvalue", col="blue", lwd=2)
+```
+
+## Plotting non linear mixed effects model
+
+```{r}
+#| eval: false
+# Load required library
+library(nlme)
+
+
+# Fit the non-linear mixed-effects model
+
+#ease ~ b_1i * (1 - exp(-(b1age / b_2i) ^ b_3i)),
+
+#b_1i+b_2i*((age-18)/12)+b_3i*((age-18)/12)^2,
+
+# model <- nlme::nlme(ease ~ b_1i * (1 - exp(-(b1age / b_2i) ^ b_3i)),
+#                     fixed=b_1i+b_2i+b_3i~1,
+#                     random=b_1i+b_2i+b_3i~1,
+#                     data = longer_comp)
+   
+longer_comp_plot  <- longer_comp %>% select(useful, ease, id) %>% drop_na(.)
+
+           
+hght.quad.nlme <- nlme(ease~b_1i+b_2i*((useful-18)/12)+b_3i*((useful-18)/12)^2,
+                      data=longer_comp_plot,
+                      fixed=b_1i+b_2i+b_3i~1,
+                      groups=~id,
+                      start=c(30, 10, -3),
+                      na.action = na.omit)
+
+
+dat <- getData(hght.quad.nlme)
+
+
+# Predict values using the model
+dat$predicted <- predict(hght.quad.nlme, level = 0)
+# This is used but might have to be adjusted according to your specific case.
+
+#Plot the data
+plot(ease ~ useful, data = dat, xlab = "useful", ylab = "ease")
+lines(dat$ease, dat$predicted, col="red")
+```
+
+
+```{r}
+#| eval: false
+theta = seq(0, 1, 0.0001)
+prior = theta ^ 864 * (1 - theta) ^ 227
+prior = prior / sum(prior)
+```
+
+
+```{r}
+#| eval: false
+
+ini <- mice(longer_comp, maxit = 0)
+method <- ini$meth
+method <- gsub("pmm", "norm", meth)
+
+pred <- ini$pred
+
+pred[, "id"] <- 0
+pred[, "set"] <- 0
+
+imp1 <- mice(longer_comp, meth = method, pred = pred, print = FALSE)
+
+ini <- mice(longer_comp, maxit = 0)
+pred <- ini$pred
+pred[, "set"] <- 0
+imp2 <- mice(longer_comp, meth = method, pred = pred, print = FALSE)
+
+plot(imp2, c("ease", "tooluse", "useful"))
+
+imp3b <- mice.mids(imp2, maxit = 20, print = FALSE)
+plot(imp3b, c("ease", "tooluse", "useful"))
+
+densityplot(imp3b)
+
+
+model_formula <- tooluse ~ cwc(ease, id) + gm(useful, id) + ( 1  | id)
+mcmc_iter <- 4
+dep <- list("model"="logistic", "formula"=model_formula, R_args=list(iter=mcmc_iter) )
+ind_x <- list("model"="mlreg", "formula"= ease ~ useful + (1|id), R_args=list(iter=mcmc_iter), sampling_level="id" )
+ind <- list("X"=ind_x)
+
+mod1 <- mdmb::frm_fb(longer_comp, dep, ind, aggregation=TRUE)
+
+frm_fb(dat, dep, ind, weights=NULL, verbose=TRUE, data_init=NULL, iter=500,
+burnin=100, Nimp=10, Nsave=3000, refresh=25, acc_bounds=c(.45,.50),
+print_iter=10, use_gibbs=TRUE, aggregation=TRUE)
+```
+
+
+```{r}
+#| eval: false
+NonNACount <- function(x) {
+  return(sum(!is.na(x)))
+}
+
+comp_df <- comp_df  %>% rowwise() %>% 
+  mutate(tooluse_total = (t2tooluse + t3tooluse + t4tooluse + t5tooluse + t6tooluse) / 
+           NonNACount(c(t2tooluse, t3tooluse, t4tooluse, t5tooluse, t6tooluse))) 
+
+for (col in names(comp_df)[which(names(comp_df) == 't1age'):which(names(comp_df) == 't1media')]){
+    names(comp_df)[names(comp_df) == col] <-  sub("t", "b", col)
+}
+
+names(comp_df)[names(comp_df) == "t1anx"] <-  sub("t", "b", "t1anx")
+
+names(comp_df)[names(comp_df) == "tooluse_total"] <-  sub("tool", "b1tool", "tooluse_total")
+
+longer_comp <- comp_df %>% 
+ pivot_longer(matches("t1|t2|t3|t4|t5|t6|t7|t8"),
+    names_pattern = "(t.)(.*)", 
+   names_to = c( "set", ".value")
+ ) %>% mutate(set = (as.numeric(textclean::mgsub(.$set, c("t", "_"), c("", "")))))
+
+longer_comp$id <- rep(seq(1,292), each=8)
+
+```
+
+```{r}
+#| eval: false
+# Replace with mean/ mode for missing values if more than 3 days available for daily diaries
+# Mode
+column_names <- c("t2tooluse", "t3tooluse", "t4tooluse", "t5tooluse", "t6tooluse")
+new_data <- data.frame(t(apply(comp_df[column_names], 1, replace_na_with_mode, column_names = column_names)))
+colnames(new_data) <- column_names
+comp_df[ , column_names] <- new_data # Merge the new_data dataframe with the original data dataframe
+ 
+# Mean
+ease <- comp_df %>% select(matches("t[2-6]ease")) %>% names(.)
+gopro <- comp_df %>% select(matches("t[2-6]gopro")) %>% names(.)
+over <- comp_df %>% select(matches("t[2-6]over")) %>% names(.)
+strain <- comp_df %>% select(matches("t[2-6]strain")) %>% names(.)
+useful <- comp_df %>% select(matches("t[2-6]useful")) %>% names(.)
+timespent <- comp_df %>% select(matches("t[2-6]timespent")) %>% names(.)
+hoursused <- comp_df %>% select(matches("t[2-6]hoursused_")) %>% names(.)
+hoursstudy <- comp_df %>% select(matches("t[2-6]hoursstudy_")) %>% names(.)
+timespent <- comp_df %>% select(matches("t[2-6]timespent")) %>% names(.)
+
+comp_df <- comp_df %>% 
+  mean_replace(., ease) %>% 
+  mean_replace(., gopro) %>%
+  mean_replace(., over) %>%
+  mean_replace(., strain) %>%
+  mean_replace(., useful) %>%
+  mean_replace(., timespent) %>%
+  mean_replace(., hoursused) %>%
+  mean_replace(., hoursstudy) %>%
+  mean_replace(., timespent)
+  
+```
+
+```{r}
+#| eval: false
+multiModel <- brms::brm(data = longer_comp, toolusenextday ~ useful + b1media +  (useful|id))
+summary(multiModel)
+
+```
+
+
+```{r}
+#| eval: false
+library(lme4)
+
+# H1a: Daily perceived usefulness of NLP chatbots is positively related to daily NLP chatbot usage (yes or no) 
+# Fit mixed-effects model
+model <- glmer(toolusenextday  ~  useful + b1media + b1age + b1extraversion + b1agreeableness + b1conscientiousness + b1neuroticism + b1openness + (1 | id), data = longer_comp, family = "binomial")
+
+# Display the result
+summary(model)
+
+
+# H1b: Daily perceived usefulness of NLP chatbots is positively related to daily NLP chatbot usage time in minutes.
+# Fit mixed-effects model
+library(lmerTest)
+model <- lmer(timespent ~ useful + b1media + b1age + b1extraversion + b1agreeableness + b1conscientiousness + b1neuroticism + b1openness + (1 | id), data = longer_comp)
+
+# Display the result
+summary(model)
+```
+
+```{r}
+#| eval: false
+# H2a: Daily perceived ease of use of NLP chatbots is positively related to daily NLP chatbot usage (yes or no).
+model <- glmer(toolusenextday ~ ease + b1media + b1age + b1extraversion + b1agreeableness + b1conscientiousness + b1neuroticism + b1openness + (1 | id), data = longer_comp, family = "binomial")
+
+# Display the result
+summary(model)
+
+
+# H2b: Daily perceived ease of use of NLP chatbots is positively related to daily NLP chatbot usage time in minutes.
+# Fit mixed-effects model
+library(lmerTest)
+model <- lmer(timespent ~ ease + b1media + b1age + b1extraversion + b1agreeableness + b1conscientiousness + b1neuroticism + b1openness + (1 | id), data = longer_comp)
+
+# Display the result
+summary(model)
+```
+
+```{r}
+#| eval: false
+# H3a: NLP chatbot anxiety is negatively related to daily NLP chatbot usage (yes or no)
+model <- glmer(toolusenextday ~ b1anx + b1media + b1age + b1extraversion + b1agreeableness + b1conscientiousness + b1neuroticism + b1openness + (1 | id), data = longer_comp, family = "binomial")
+
+# Display the result
+summary(model)
+
+
+# H3b: NLP chatbot anxiety is negatively related to daily NLP chatbot usage time in minutes, and c) positively related to daily NLP chatbot strain.
+
+# Fit mixed-effects model
+library(lmerTest)
+model <- lmer(timespent ~ b1anx + b1media + b1age + b1extraversion + b1agreeableness + b1conscientiousness + b1neuroticism + b1openness + (1 | id), data = longer_comp)
+
+# Display the result
+summary(model)
+
+# H3b: NLP chatbot anxiety is positively related to daily NLP chatbot strain.
+model <- lmer(strain ~ b1anx + b1media + b1age + b1extraversion + b1agreeableness + b1conscientiousness + b1neuroticism + b1openness + (1 | id), data = longer_comp)
+
+# Display the result
+summary(model)
+```
+
+```{r}
+#| eval: false
+# H4a: Daily technology overload is negatively related to daily NLP chatbot usage (yes or no)
+model <- glmer(tooluse ~ over + b1media + b1age + b1extraversion + b1agreeableness + b1conscientiousness + b1neuroticism + b1openness + (1 | id), data = longer_comp, family = "binomial")
+
+# Display the result
+summary(model)
+
+# H4b: Daily technology overload is negatively related to daily NLP chatbot usage time in minutes
+model <- lmer(timespent ~ over + b1media + b1age + b1extraversion + b1agreeableness + b1conscientiousness + b1neuroticism + b1openness + (1 | id), data = longer_comp)
+
+# Display the result
+summary(model)
+
+# H4c: Daily technology overload is positively related to daily NLP chatbot strain.
+model <- lmer(strain ~ over + b1media + b1age + b1extraversion + b1agreeableness + b1conscientiousness + b1neuroticism + b1openness + (1 | id), data = longer_comp)
+
+# Display the result
+summary(model)
+```
+
+```{r}
+#| eval: false
+# As part of exploratory analyses, we will investigate the role of familiarity with NLP chatbots and training experience on perceived usefulness and ease of use, the role of NLP usage on study goal achievement, and the role of openness to experience as a moderator of the relationship of usefulness and ease of use with daily usage. 
+
+# E1: The role of familiarity with NLP chatbots and training experience on perceived usefulness
+model <- lmer(useful ~ b1experience + b1receivetr + b1media + b1age + b1extraversion + b1agreeableness + b1conscientiousness + b1neuroticism + b1openness + (1 | id), data = longer_comp)
+
+# Display the result
+summary(model)
+
+# E2: The role of familiarity with NLP chatbots and training experience on perceived ease of use
+model <- lmer(ease ~ b1experience + b1receivetr + b1media + b1age + b1extraversion + b1agreeableness + b1conscientiousness + b1neuroticism + b1openness + (1 | id), data = longer_comp)
+
+# Display the result
+summary(model)
+
+# E3: The role of NLP usage on study goal achievement
+model <- lmer(gopro ~ tooluse + b1media + b1age + b1extraversion + b1agreeableness + b1conscientiousness + b1neuroticism + b1openness + (1 | id), data = longer_comp)
+
+# Display the result
+summary(model)
+
+# E4: Openness to experience as a moderator of the relationship of usefulness with daily usage. 
+model <- glmer(tooluse ~ useful*b1openness + b1media + b1age + b1extraversion + b1agreeableness + b1conscientiousness + b1neuroticism + b1openness + (1 | id), data = longer_comp, family = "binomial")
+
+# Display the result
+summary(model)
+
+# E5: Openness to experience as a moderator of the relationship of ease of use with daily usage. 
+model <- glmer(tooluse ~ ease*b1openness + b1media + b1age + b1extraversion + b1agreeableness + b1conscientiousness + b1neuroticism + b1openness + (1 | id), data = longer_comp, family = "binomial")
+
+# Display the result
+summary(model)
+```
+
+```{r}
+#| eval: false
+fit.totaleffect <- lmer(ease ~ b1experience +(1| id), data = longer_comp)
+fit.mediator    <- lmer(useful ~ b1experience +(1| id), data = longer_comp)
+fit.dv          <- lmer(ease ~ useful + b1experience +(1| id), data = longer_comp)
+
+results <- mediation::mediate(fit.mediator, fit.dv, treat='b1experience', mediator='useful')
+
+```
+
+
+
+## Multiple Imputation
+
+
+```{r}
+library(mice)
+allVars <- names(longer_comp)
+
+missVars <- names(longer_comp)[colSums(is.na(longer_comp)) > 0]
+
+predictorMatrix <- matrix(0, ncol = length(allVars), nrow = length(allVars))
+rownames(predictorMatrix) <- allVars
+colnames(predictorMatrix) <- allVars
+
+###  Specify Variables informing imputation
+imputerVars <- c("b1age","b1extraversion","b1agreeableness","b1conscientiousness","b1neuroticism","b1openness","b1experience","b1wishtr", "b1media", "b1anx", "f1wishtr", "f1media", "f1anx", "f2wishtr", "f2media", "f2anx", "ease", "useful", "timespent", "hoursused_4", "hoursstudy_4", "gopro", "over", "strain")
+## Keep variables that actually exist in dataset
+imputerVars <- intersect(unique(imputerVars), allVars)
+imputerVars
+imputerMatrix <- predictorMatrix
+imputerMatrix[,imputerVars] <- 1
+colSums(imputerMatrix)
+
+###  Specify variables with missingness to be imputed
+imputedOnlyVars <- c("tooluse", "ease", "useful", "timespent", "hoursused_4",
+                     "gopro", "over", "strain")
+## Imputers that have missingness must be imputed.
+imputedVars <- intersect(unique(c(imputedOnlyVars, imputerVars)), missVars)
+imputedVars
+imputedMatrix <- predictorMatrix
+imputedMatrix[imputedVars,] <- 1
+imputedMatrix
+
+
+###  Construct a full predictor matrix (rows: imputed variables; cols: imputer variables)
+predictorMatrix <- imputerMatrix * imputedMatrix
+## Diagonals must be zeros (a variable cannot impute itself)
+diag(predictorMatrix) <- 0
+predictorMatrix
+
+
+###  Dry-run mice for imputation methods
+dryMice <- mice(data = longer_comp, m = 1, predictorMatrix = predictorMatrix, maxit = 0)
+## Update predictor matrix
+predictorMatrix <- dryMice$predictorMatrix
+
+###   Imputers (non-zero columns of predictorMatrix)
+imputerVars <- colnames(predictorMatrix)[colSums(predictorMatrix) > 0]
+imputerVars
+###   Imputed (non-zero rows of predictorMatrix)
+imputedVars <- rownames(predictorMatrix)[rowSums(predictorMatrix) > 0]
+imputedVars
+###   Imputers that are complete
+setdiff(imputerVars, imputedVars)
+###   Imputers with missingness
+intersect(imputerVars, imputedVars)
+###   Imputed-only variables without being imputers
+setdiff(imputedVars, imputerVars)
+###   Variables with missingness that are not imputed
+setdiff(missVars, imputedVars)
+###   Relevant part of predictorMatrix
+predictorMatrix[rowSums(predictorMatrix) > 0, colSums(predictorMatrix) > 0]
+
+dryMice$method[setdiff(allVars, imputedVars)] <- ""
+###   Methods used for imputation
+dryMice$method[sapply(dryMice$method, nchar) > 0]
+
+
+## Set seed for reproducibility
+set.seed(3561126)
+
+##  execution
+miceout <- mice(data = longer_comp, m = 1, print = TRUE, 
+                predictorMatrix = predictorMatrix, method = dryMice$method)
+
+
+###  Show mice results
+## mice object ifself
+miceout
+## Variables that no longer have missingness after imputation
+actuallyImputedVars <-
+    setdiff(names(longer_comp)[colSums(is.na(longer_comp)) > 0],
+            names(complete(miceout, action = 1))[colSums(is.na(complete(miceout, action = 1))) > 0])
+actuallyImputedVars
+
+## Examine discrepancies
+###   Variables that were unexpectedly imputed
+setdiff(actuallyImputedVars, imputedVars)
+###   Variables that were planned for MI but not imputed
+setdiff(imputedVars, actuallyImputedVars)
+
+## Still missing variables
+names(complete(miceout, action = 1))[colSums(is.na(complete(miceout, action = 1))) > 0]
+
+
+```
+
+
+
+
+# References
+
+::: {#refs custom-style="Bibliography"}
+:::
